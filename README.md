@@ -19,9 +19,18 @@ If you don't know how to use GitHub, follow these 3 simple steps to get started:
 ## 🦉 How it Works (In Plain English)
 1. **The Hand-off**: You tell the AI which directory your photos are in.
 2. **The Preview**: The tool creates a small, high-quality copy of your photo for the AI to look at (this saves time and internet data).
-3. **The Advice**: The AI analyzes your photo for composition, lighting, and focus (especially for Wildlife and Landscapes).
-4. **The Starting Point**: The AI creates 3 new "versions" of your photo in Darktable (Natural, Dramatic, and Creative) with the exposure and color sliders already moved to suggested positions.
-5. **Your Turn**: You switch to Darktable, pick the version you like best, and finish the edit.
+3. **The Intelligence**: Using **macOS-native metadata indexing (`mdls`)**, the tool gathers your camera settings (ISO, Lens, Aperture) to help the AI make smarter technical decisions like noise reduction.
+4. **The Advice**: The AI analyzes your photo for composition, lighting, and focus (especially for Wildlife and Landscapes).
+5. **The Pre-flight Review**: Before changing anything, the AI presents a **"Mentor Report"** explaining *why* it's choosing specific settings and which modern Darktable modules (like AgX) it's using.
+6. **The Starting Point**: The AI creates 3 new "versions" of your photo in Darktable (Natural, Dramatic, and Research-based) using the cutting-edge **AgX Scene-Referred** pipeline.
+7. **Your Turn**: You switch to Darktable, pick the version you like best, and finish the edit.
+
+---
+
+## 🛠 Advanced Features (2026 Edition)
+- **AgX-First Workflow**: We prioritize the modern `AgX` tone mapper over legacy modules, ensuring your colors stay natural even in high-contrast highlights.
+- **Hardware-Aware**: The system includes a sensor-correction database (e.g., Canon R7 high-ISO noise handling, Sony black-level offsets).
+- **Troubleshooting**: If an image appears black, it's usually a `sigmoid` or `agx` version mismatch. Our `SKILL.md` contains a recovery guide for these rare schema updates.
 
 ---
 
