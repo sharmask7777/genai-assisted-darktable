@@ -17,8 +17,8 @@ def test_sync_history_end():
     desc = root.find(f".//{{{NS['rdf']}}}Description")
     assert desc.get(f"{{{NS['darktable']}}}history_end") == "0"
     
-    # Add a module
-    history_seq = root.find(f".//{{{NS['rdf']}}}Seq")
+    # Add a module to the CORRECT history list
+    history_seq = root.find(f".//{{{NS['darktable']}}}history/{{{NS['rdf']}}}Seq")
     ET.SubElement(history_seq, f"{{{NS['rdf']}}}li", {f"{{{NS['darktable']}}}operation": "exposure"})
     
     sync_history_end(root)
@@ -26,7 +26,7 @@ def test_sync_history_end():
 
 def test_sync_history_end_multiple():
     root = generate_skeleton()
-    history_seq = root.find(f".//{{{NS['rdf']}}}Seq")
+    history_seq = root.find(f".//{{{NS['darktable']}}}history/{{{NS['rdf']}}}Seq")
     for _ in range(5):
         ET.SubElement(history_seq, f"{{{NS['rdf']}}}li")
     
@@ -41,7 +41,7 @@ def test_initialize_new_version_cloning(tmp_path):
     
     # Create base XMP with 1 module
     root = generate_skeleton()
-    seq = root.find(f".//{{{NS['rdf']}}}Seq")
+    seq = root.find(f".//{{{NS['darktable']}}}history/{{{NS['rdf']}}}Seq")
     ET.SubElement(seq, f"{{{NS['rdf']}}}li", {f"{{{NS['darktable']}}}operation": "exposure"})
     write_xmp(root, str(base_xmp))
     
@@ -51,7 +51,7 @@ def test_initialize_new_version_cloning(tmp_path):
     
     # Verify target has 1 module
     target_root = load_xmp(str(target_xmp))
-    target_seq = target_root.find(f".//{{{NS['rdf']}}}Seq")
+    target_seq = target_root.find(f".//{{{NS['darktable']}}}history/{{{NS['rdf']}}}Seq")
     assert len(list(target_seq)) == 1
     target_desc = target_root.find(f".//{{{NS['rdf']}}}Description")
     assert target_desc.get(f"{{{NS['darktable']}}}history_end") == "1"

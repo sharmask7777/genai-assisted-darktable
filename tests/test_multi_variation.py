@@ -40,6 +40,6 @@ def test_generate_variations(tmp_path):
     
     # Verify the first one (Version 0 since it's greenfield)
     v0 = load_xmp(generated_files[0])
-    seq = v0.find(f".//{{{NS['rdf']}}}Seq")
+    seq = v0.find(f".//{{{NS['darktable']}}}history/{{{NS['rdf']}}}Seq")
     # Should have 2 items: exposure and temperature
     assert len(list(seq)) == 2

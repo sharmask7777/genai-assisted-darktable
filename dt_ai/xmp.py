@@ -73,10 +73,12 @@ def load_xmp(path: str) -> ET.Element:
 def sync_history_end(root: ET.Element):
     """Updates darktable:history_end to match history list size."""
     desc = root.find(f".//{{{NS['rdf']}}}Description")
-    seq = root.find(f".//{{{NS['darktable']}}}history/{{{NS['rdf']}}}Seq")
-    if desc is not None and seq is not None:
-        count = len(list(seq))
-        desc.set(f"{{{NS['darktable']}}}history_end", str(count))
+    history_node = root.find(f".//{{{NS['darktable']}}}history")
+    if history_node is not None:
+        seq = history_node.find(f"{{{NS['rdf']}}}Seq")
+        if desc is not None and seq is not None:
+            count = len(list(seq))
+            desc.set(f"{{{NS['darktable']}}}history_end", str(count))
 
 def get_next_version_path(raw_path: str) -> str:
     """Returns the path for the next available sidecar version."""
@@ -101,26 +103,46 @@ def initialize_new_version(raw_path: str, target_xmp_path: str):
     sync_history_end(root)
     write_xmp(root, target_xmp_path)
 
+def encode_params(values: List[float]) -> str:
+    """
+    Encodes a list of floats into a Darktable hex-encoded binary string.
+    Uses IEEE 754 little-endian format.
+    """
+    if not values:
+        return ""
+    binary_data = b"".join(struct.pack('<f', v) for v in values)
+    return binary_data.hex()
+
 def get_exposure_params(ev: float, black: float = 0.0) -> str:
     """Generates hex-encoded parameters for the 'exposure' v6 module."""
-    data = struct.pack('<iffff', 0, black, ev, 0.5, 0.0)
-    return data.hex()
+    return encode_params([0.0, black, ev, 0.5, 0.0]) # mode=0, black, ev, percentile, target
 
 def get_temperature_params(kelvin: float) -> str:
     """Generates hex-encoded parameters for the 'temperature' v3 module."""
-    ratio = 5500.0 / kelvin
-    red = 2.0 * ratio
-    blue = 1.5 / ratio
+    # Using a much safer neutral baseline (1.0) instead of aggressive guesses.
+    # Higher Kelvin (10000) = cooler/bluer (lower red ratio)
+    # Lower Kelvin (2000) = warmer/redder (higher red ratio)
+    base_kelvin = 5500.0
+    ratio = base_kelvin / kelvin
+    
+    # We use a very gentle curve to avoid the "incredible red" cast
+    red = 1.0 * ratio
+    blue = 1.0 / ratio
     green = 1.0
+    
     data = struct.pack('<ffff', red, green, blue, green)
     return data.hex()
 
 def add_history_item(root: ET.Element, operation: str, params: str, modversion: str, enabled: bool = True):
     """Injects a new processing module into the history stack with modern blendops."""
-    seq = root.find(f".//{{{NS['darktable']}}}history/{{{NS['rdf']}}}Seq")
+    # Specifically target the Seq inside darktable:history
+    history_node = root.find(f".//{{{NS['darktable']}}}history")
+    if history_node is None:
+        raise RuntimeError("Could not find darktable:history in XMP")
+    
+    seq = history_node.find(f"{{{NS['rdf']}}}Seq")
     if seq is None:
-        # Fallback if the path logic above is too specific
-        seq = root.find(f".//{{{NS['rdf']}}}Seq")
+        raise RuntimeError("Could not find rdf:Seq inside darktable:history")
         
     num = len(list(seq))
     attribs = {
@@ -139,18 +161,29 @@ def add_history_item(root: ET.Element, operation: str, params: str, modversion: 
     sync_history_end(root)
 
 def generate_variations(raw_path: str, ai_result: dict) -> List[str]:
-    """Generates three Darktable version sidecars based on AI variations."""
+    """Generates Darktable version sidecars based on all AI variations provided."""
     generated = []
     variations = ai_result.get("variations", {})
-    styles = ["natural", "dramatic", "creative"]
-    for style in styles:
-        params = variations.get(style)
+    
+    for style, params in variations.items():
         if not params: continue
+        
         target_path = get_next_version_path(raw_path)
         initialize_new_version(raw_path, target_path)
+        
         root = load_xmp(target_path)
-        add_history_item(root, "exposure", get_exposure_params(params.get("exposure", 0.0)), "6")
+        
+        # Inject Exposure (now supporting black level for that "background dark" look)
+        exp_hex = get_exposure_params(
+            ev=params.get("exposure", 0.0),
+            black=params.get("black", 0.0)
+        )
+        add_history_item(root, "exposure", exp_hex, "6")
+        
+        # Inject Temperature
         add_history_item(root, "temperature", get_temperature_params(params.get("kelvin", 5500.0)), "3")
+        
         write_xmp(root, target_path)
         generated.append(target_path)
+        
     return generated

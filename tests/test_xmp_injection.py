@@ -7,7 +7,7 @@ def test_add_history_item_basic():
     # Add exposure
     add_history_item(root, "exposure", "00000000", "6")
     
-    seq = root.find(f".//{{{NS['rdf']}}}Seq")
+    seq = root.find(f".//{{{NS['darktable']}}}history/{{{NS['rdf']}}}Seq")
     items = list(seq)
     assert len(items) == 1
     
@@ -24,7 +24,7 @@ def test_add_history_item_sequential():
     add_history_item(root, "exposure", "000", "6")
     add_history_item(root, "temperature", "111", "3")
     
-    seq = root.find(f".//{{{NS['rdf']}}}Seq")
+    seq = root.find(f".//{{{NS['darktable']}}}history/{{{NS['rdf']}}}Seq")
     items = list(seq)
     assert len(items) == 2
     assert items[0].get(f"{{{NS['darktable']}}}num") == "0"
