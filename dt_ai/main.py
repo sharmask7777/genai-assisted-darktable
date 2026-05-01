@@ -4,6 +4,11 @@ from dt_ai.discovery import discover_raw_files
 from dt_ai.processor import extract_preview
 from dt_ai.ai import analyze_image, AESTHETIC_PROMPT
 
+def needs_denoise_interaction(recommendations): 
+    """Returns True if any denoise-related module is recommended.""" 
+    denoise_terms = {"denoise", "denoiseprofile", "denoise (profiled)"} 
+    return any(term in [r.lower() for r in recommendations] for term in denoise_terms) 
+
 def save_audit_report(raw_path: str, audit_text: str) -> str:
     """Saves the AI audit text to a Markdown file alongside the RAW image."""
     base, _ = os.path.splitext(raw_path)
