@@ -2,4 +2,9 @@
 __pycache__/
 *.pyc
 .dt-ai/previews/
-\n# Ignore gemini cli state\n.gemini
+
+# Ignore gemini cli state
+.gemini
+.parity-sync-20260501_173113
+.planning
+strands-skills
