@@ -1,9 +1,24 @@
 [project]
 name = "dt-ai"
 version = "0.1.0"
-description = "Add your description here"
+description = "Darktable GenAI Assistant"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "click>=8.3.3",
+    "click>=8.1.7",
+]
+
+[project.scripts]
+dt-ai = "dt_ai.main:cli"
+
+[tool.uv]
+package = true
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.3",
 ]
