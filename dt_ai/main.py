@@ -2,6 +2,17 @@ import click
 import os
 from dt_ai.discovery import discover_raw_files
 from dt_ai.processor import extract_preview
+from dt_ai.ai import analyze_image, AESTHETIC_PROMPT
+
+def save_audit_report(raw_path: str, audit_text: str) -> str:
+    """Saves the AI audit text to a Markdown file alongside the RAW image."""
+    base, _ = os.path.splitext(raw_path)
+    report_path = f"{base}_audit.md"
+    
+    with open(report_path, "w", encoding="utf-8") as f:
+        f.write(audit_text)
+        
+    return report_path
 
 @click.group()
 def cli():
@@ -28,8 +39,18 @@ def audit(path, dry_run):
         basename = os.path.basename(f)
         click.echo(f"Processing {basename}...")
         try:
+            # 1. Extract Preview
             preview_path = extract_preview(f)
             click.echo(f"  ✓ Extracting preview: {os.path.relpath(preview_path)}")
+            
+            # 2. Analyze Image
+            click.echo(f"  ... Performing AI aesthetic audit")
+            audit_text = analyze_image(preview_path, AESTHETIC_PROMPT)
+            
+            # 3. Save Report
+            report_path = save_audit_report(f, audit_text)
+            click.echo(f"  ✓ Audit report saved: {os.path.basename(report_path)}")
+            
         except Exception as e:
             click.echo(f"  ✗ Error: {str(e)}")
 
