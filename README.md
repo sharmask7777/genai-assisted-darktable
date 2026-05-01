@@ -58,8 +58,34 @@ Now, let's set up the assistant. In your **Terminal**, you need to "go into" the
 ### 3. Connect the Assistant to your CLI
 Run this command once to make the "Mentorship" instructions available to your AI:
 ```bash
-gemini skills link .gemini/skills/genai-assisted-darktable --scope workspace
+gemini skills link skills/genai-assisted-darktable --scope workspace
 ```
+
+---
+
+## 🤖 Using Other AI Assistants (Claude, Kiro)
+
+While this project is designed for the Gemini CLI, the core workflow can be adapted to other conversational AI assistants.
+
+### Gemini
+Continue to use the `gemini` command as described.
+```bash
+gemini
+```
+
+### Claude
+To use Claude, you would start its own command-line interface (if available):
+```bash
+claude
+```
+
+### Kiro
+To use the Kiro assistant, you would use its dedicated CLI tool:
+```bash
+kiro-cli
+```
+
+After starting the alternative assistant, you would need to manually guide it through the mentorship steps outlined in the "How to Edit Your First Project" section, as the automated skill linking is specific to Gemini CLI.
 
 ---
 
