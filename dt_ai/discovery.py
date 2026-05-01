@@ -1,9 +1,69 @@
 import os
 import glob
+import subprocess
+import json
 from pathlib import Path
-from typing import List
+from typing import List, Dict
 
-RAW_EXTENSIONS = {'.ARW', '.CR2', '.NEF', '.ORF', '.DNG'}
+RAW_EXTENSIONS = {'.ARW', '.CR2', '.NEF', '.ORF', '.DNG', '.JPG', '.JPEG'}
+
+def get_raw_metadata(path: str) -> Dict[str, str]:
+    """
+    Extracts metadata from an image file using macOS native tools (mdls and sips).
+    Returns a dictionary of keys: model, lens, iso, exposure, aperture.
+    """
+    if not os.path.exists(path):
+        return {}
+
+    metadata = {}
+    
+    # 1. Try mdls first (best for macOS metadata indexing)
+    try:
+        cmd = ['mdls', '-name', 'kMDItemModel', '-name', 'kMDItemLensModel', 
+               '-name', 'kMDItemISOSpeed', '-name', 'kMDItemExposureTimeSeconds', 
+               '-name', 'kMDItemFNumber', path]
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        if result.returncode == 0:
+            output = result.stdout
+            mdls_mappings = {
+                'kMDItemModel': 'model',
+                'kMDItemLensModel': 'lens',
+                'kMDItemISOSpeed': 'iso',
+                'kMDItemExposureTimeSeconds': 'exposure',
+                'kMDItemFNumber': 'aperture'
+            }
+            for line in output.splitlines():
+                for key, internal in mdls_mappings.items():
+                    if key in line and '=' in line:
+                        val = line.split("=", 1)[1].strip()
+                        if val != "(null)":
+                            metadata[internal] = val.strip('"')
+    except Exception:
+        pass
+
+    # 2. Use sips as fallback or for missing keys
+    try:
+        result = subprocess.run(['sips', '-g', 'all', path], capture_output=True, text=True)
+        if result.returncode == 0:
+            output = result.stdout
+            sips_mappings = {
+                'model': 'model',
+                'lensModel': 'lens',
+                'ISO': 'iso',
+                'exposureTime': 'exposure',
+                'aperture': 'aperture'
+            }
+            
+            for line in output.splitlines():
+                line = line.strip()
+                for sips_key, internal_key in sips_mappings.items():
+                    if f" {sips_key}:" in line and not metadata.get(internal_key):
+                        val = line.split(":", 1)[1].strip()
+                        metadata[internal_key] = val
+    except Exception:
+        pass
+                    
+    return metadata
 
 def discover_raw_files(path_pattern: str) -> List[str]:
     """

@@ -14,15 +14,17 @@ This SOP transforms your photo-editing session into a mentorship experience. I w
 ## Constraints
 - **One Question at a Time**: You MUST ask only one question and wait for the user's response before proceeding.
 - **Mentorship Tone**: Always adopt a supportive, talkative, and educational tone. Do not just state facts; explain the "why."
-- **Least Intrusive**: Never modify or process images without the user's explicit selection.
+- **AgX-First Workflow**: You MUST prioritize the modern **Scene-Referred (AgX)** pipeline. You MUST use the `agx` module for tone mapping instead of `sigmoid` or `filmicrgb` whenever possible.
+- **Metadata Awareness**: You MUST use the provided image metadata (Camera, Lens, ISO) to inform technical fixes like denoising and color-cast correction.
+- **Pre-flight Review**: You MUST present a "Pre-flight Review" to the user, explaining your technical rationale before applying edits.
 - **Python-First**: Always use the `dt_ai` backend tools for state management and image extraction.
-- **Format Safety**: You MUST ensure that the AI parameters you generate are compatible with modern Darktable (Exposure v6, Temperature v3).
 
 ## Recovery & Troubleshooting
-If Darktable crashes after generating variations:
-1. Instruct the user to run `rm <image_path>_*.xmp` in their terminal to remove the incompatible files.
-2. Report the crash to the developer via a bug report.
-3. Re-verify the `dt_ai/xmp.py` struct mappings.
+If Darktable crashes or the image appears entirely black after generating variations:
+1. **Black Image Fix**: This usually indicates a `sigmoid` module version mismatch. Ensure `dt_ai/xmp.py` is using `modversion 3` and that `display_white_target` is set to `100.0`.
+2. **Cleanup**: Instruct the user to run `rm <image_path>_*.xmp` in their terminal to remove the incompatible files.
+3. **Report**: Report the crash or rendering issue to the developer via a bug report.
+4. **Re-verify**: Re-verify the `dt_ai/xmp.py` struct mappings against the installed Darktable version.
 
 
 ## Steps
@@ -47,15 +49,19 @@ Let's get your workstation ready for our collaboration.
 ### 4. Mentorship & Vision Analysis
 This is where I analyze your work and provide guidance.
 - **Action**: Call `uv run dt-ai agent-next <image_path>`.
-- **Action**: Parse the resulting JSON. It contains a `target_preview` path and a `prompt`.
-- **Action**: Use the `read_file` tool to "look" at the JPEG preview at `target_preview`.
-- **Reasoning**: Perform the vision analysis of the image using the `prompt` provided in the JSON payload.
-- **The Mentorship Nudge**: Present your findings to the user. Explain the "why" behind your aesthetic and technical observations. Adopt the Talkative Mentor persona.
-- **Inspiration Research (Optional)**: Ask the user if they'd like you to search the internet for professional examples of similar subjects (e.g., "Would you like me to look up some award-winning raptor portraits to see how the pros grade their shadows?").
-  - If yes, use the `google_web_search` or `web_fetch` tools to find articles, portfolios, or tutorials related to editing that specific type of photo. Share 1-2 actionable artistic ideas you discover.
-- **Action**: Inform the user you are generating the variations and then call:
+- **Action**: Parse the resulting JSON. It MUST follow the `AgX` parameter format: `agx_contrast` and `agx_saturation` (default 1.0) instead of `contrast`/`skew` whenever using the `AgX` module.
+- **Action**: Parse the resulting JSON. It contains `target_preview`, `metadata`, and a `prompt`.
+- **Action**: If `read_file` fails for the `target_preview` (e.g., due to ignore patterns), use `run_shell_command("cp <target_preview> temp_preview.jpg")` and then `read_file` on `temp_preview.jpg`. Always delete the temporary file after use.
+- **Reasoning**: Perform the vision analysis using the `prompt` and the `metadata`. If the tool's `metadata` is missing fields like ISO or Lens, use `run_shell_command("mdls <image_path>")` to find them before proceeding. Consider hardware-specific needs (e.g., "This Canon R7 sensor has high pixel density, so noise management is key").
+- **The Mentorship Nudge**: Present your findings to the user. Explain the **"Why"** behind your choices.
+  - **Tone Mapper Choice**: Explicitly justify your choice between **AgX** and **Sigmoid**:
+    - *Choose AgX* for high-contrast scenes, vibrant plumage (like the Indian Paradise Flycatcher), or harsh sunlight where you want to prevent color shifts in the highlights.
+    - *Choose Sigmoid* for softer light, portraits, or when the user wants a punchier, "digital-pop" aesthetic with simpler controls.
+- **Subject Research**: Use the `google_web_search` tool to look up creative tutorials for the specific subject (e.g., "best practices for editing raptors in darktable 2025"). 
+- **The Pre-flight Report**: Before applying edits, summarize exactly what you are about to do and why. Ask: "Ready to apply these variations?"
+- **Action**: Once confirmed, call:
   `uv run dt-ai apply-variations <image_path> '<ai_result_json>'`
-- **Handoff**: Say: "I've generated 3 variations (Natural, Dramatic, Creative) for you in Darktable. Take a moment to switch over to the UI and tweak them to your heart's content. I'll be right here waiting!"
+- **Handoff**: Say: "I've generated the variations for you in Darktable. Take a moment to switch over, check the 'Pre-flight' notes in your terminal, and fine-tune the results!"
 - **Constraint**: You MUST pause here. Do not move to the next image until the user confirms they are finished with their manual adjustments.
 
 ### 5. Continuing the Journey

@@ -15,9 +15,53 @@ NS = {
     "lr": "http://ns.adobe.com/lightroom/1.0/",
 }
 
+# Legacy and Conflict-Prone Modules
+LEGACY_MODULES = [
+    "filmicrgb", 
+    "basecurve", 
+    "tonecurve",
+    "shadhi",
+]
+
+# Preferred Modern Scene-Referred Modules
+MODERN_PIPELINE = [
+    "exposure",
+    "colorbalancergb",
+    "colorcalibration",
+    "sigmoid",
+    "agx",
+]
+
+# Hardware-specific correction database
+# Keys are 'model' or 'lens' substrings. 
+# Values are dicts with corrections: black_offset, green_gain, red_gain.
+SENSOR_DATABASE = {
+    "ILCE-7M3": {"black_offset": 0.0002, "green_gain": 1.0, "red_gain": 1.0}, # Sony A7III
+    "ILCE-7RM4": {"black_offset": 0.0003, "green_gain": 1.0, "red_gain": 1.0}, # Sony A7RIV
+    "SAMSUNG": {"black_offset": 0.0005, "green_gain": 0.98, "red_gain": 1.02}, # Generic Samsung shift
+    "EOS R5": {"black_offset": 0.0, "green_gain": 1.0, "red_gain": 1.0}, # Canon usually neutral
+}
+
 # Register namespaces
 for prefix, uri in NS.items():
     ET.register_namespace(prefix, uri)
+
+def apply_hardware_corrections(metadata: dict) -> dict:
+    """
+    Returns a set of technical offsets based on sensor/lens metadata.
+    """
+    model = metadata.get("model", "").upper()
+    lens = metadata.get("lens", "").upper()
+    
+    corrections = {"black_offset": 0.0, "green_gain": 1.0, "red_gain": 1.0}
+    
+    # Check for model matches
+    for key, data in SENSOR_DATABASE.items():
+        if key in model or key in lens:
+            corrections.update(data)
+            break
+            
+    return corrections
 
 def generate_skeleton() -> ET.Element:
     """Generates a valid Darktable XMP skeleton based on user's manual edits."""
@@ -133,6 +177,57 @@ def get_temperature_params(kelvin: float) -> str:
     data = struct.pack('<ffff', red, green, blue, green)
     return data.hex()
 
+def get_sigmoid_params(contrast: float = 1.5, 
+                       skew: float = 0.0, 
+                       preserve_hue: float = 1.0,
+                       attenuation: List[float] = None,
+                       rotation: List[float] = None) -> str:
+    """
+    Generates hex-encoded parameters for the 'sigmoid' v3 module (Darktable 5.x+).
+    Based on Darktable 5.4.1 structure:
+    middle_grey_contrast (float), contrast_skewness (float), 
+    display_white_target (float), display_black_target (float),
+    color_processing (int), preserve_hue (float), base_primaries (int),
+    primary_attenuation (float[3]), primary_rotation (float[3]), primary_purity (float)
+    """
+    target_black = 0.0
+    target_white = 100.0 # Standard SDR target
+    color_processing = 0 # 0: per channel (AgX-like)
+    base_primaries = 0   # 0: working profile
+    primary_purity = 100.0 # Neutral purity
+    
+    attenuation = attenuation or [0.0, 0.0, 0.0] # 0.0 is neutral in v3 sliders
+    rotation = rotation or [0.0, 0.0, 0.0]
+    
+    # Struct: ffff i f i 3f 3f f (14 fields, 56 bytes)
+    data = struct.pack('<ffffif i3f3f f', 
+                       contrast, skew, target_white, target_black, 
+                       color_processing, preserve_hue, base_primaries,
+                       *attenuation, *rotation, primary_purity)
+    return data.hex()
+
+def get_agx_params(contrast: float = 1.0, 
+                    saturation: float = 1.0) -> str:
+    """
+    Generates hex-encoded parameters for the 'agx' v1 module.
+    Structure: 14 floats (56 bytes) covering points, curve, look, and primaries.
+    """
+    white_point = 6.0
+    black_point = -7.0
+    toe_power = 1.0
+    shoulder_power = 1.0
+    shadow_offset = 0.0
+    # Primaries (neutral: 0 rotation, 100 purity)
+    rotate = [0.0, 0.0, 0.0]
+    purity = [100.0, 100.0, 100.0]
+    
+    # Struct: 13 floats + 1 int (56 bytes)
+    auto_tune = 0
+    data = struct.pack('<13fi', 
+                       white_point, black_point, contrast, toe_power, shoulder_power,
+                       saturation, shadow_offset, *rotate, *purity, auto_tune)
+    return data.hex()
+
 def add_history_item(root: ET.Element, operation: str, params: str, modversion: str, enabled: bool = True):
     """Injects a new processing module into the history stack with modern blendops."""
     # Specifically target the Seq inside darktable:history
@@ -160,10 +255,14 @@ def add_history_item(root: ET.Element, operation: str, params: str, modversion: 
     ET.SubElement(seq, f"{{{NS['rdf']}}}li", attribs)
     sync_history_end(root)
 
-def generate_variations(raw_path: str, ai_result: dict) -> List[str]:
+def generate_variations(raw_path: str, ai_result: dict, metadata: dict = None) -> List[str]:
     """Generates Darktable version sidecars based on all AI variations provided."""
     generated = []
     variations = ai_result.get("variations", {})
+    metadata = metadata or {}
+    
+    # Calculate hardware offsets once per image
+    hw = apply_hardware_corrections(metadata)
     
     for style, params in variations.items():
         if not params: continue
@@ -173,17 +272,61 @@ def generate_variations(raw_path: str, ai_result: dict) -> List[str]:
         
         root = load_xmp(target_path)
         
-        # Inject Exposure (now supporting black level for that "background dark" look)
+        # Inject Exposure (including hardware black offset)
         exp_hex = get_exposure_params(
             ev=params.get("exposure", 0.0),
-            black=params.get("black", 0.0)
+            black=params.get("black", 0.0) + hw["black_offset"]
         )
         add_history_item(root, "exposure", exp_hex, "6")
         
-        # Inject Temperature
+        # Inject Temperature (Note: Future phases can use hw['green_gain'] / hw['red_gain'])
         add_history_item(root, "temperature", get_temperature_params(params.get("kelvin", 5500.0)), "3")
+        
+        # Inject AgX or Sigmoid (Tone mapping)
+        if "agx_contrast" in params or "agx_saturation" in params:
+            agx_hex = get_agx_params(
+                contrast=params.get("agx_contrast", 1.0),
+                saturation=params.get("agx_saturation", 1.0)
+            )
+            add_history_item(root, "agx", agx_hex, "1")
+        else:
+            # Fallback to Sigmoid
+            sig_hex = get_sigmoid_params(
+                contrast=params.get("contrast", 1.5),
+                skew=params.get("skew", 0.0),
+                attenuation=params.get("attenuation"),
+                rotation=params.get("rotation")
+            )
+            add_history_item(root, "sigmoid", sig_hex, "3")
+        
+        # Enforce modern workflow (disables legacy, ensures AgX-compatibility)
+        enforce_agx_workflow(root)
         
         write_xmp(root, target_path)
         generated.append(target_path)
         
     return generated
+
+def enforce_agx_workflow(root: ET.Element):
+    """
+    Enforces the AgX/Scene-referred workflow by disabling legacy modules
+    and ensuring modern modules are active.
+    """
+    history_node = root.find(f".//{{{NS['darktable']}}}history")
+    if history_node is None:
+        return
+    
+    seq = history_node.find(f"{{{NS['rdf']}}}Seq")
+    if seq is None:
+        return
+
+    for item in list(seq):
+        operation = item.get(f"{{{NS['darktable']}}}operation")
+        
+        # Disable legacy modules
+        if operation in LEGACY_MODULES:
+            item.set(f"{{{NS['darktable']}}}enabled", "0")
+        
+        # Ensure modern modules are enabled if they exist
+        if operation in MODERN_PIPELINE:
+            item.set(f"{{{NS['darktable']}}}enabled", "1")
