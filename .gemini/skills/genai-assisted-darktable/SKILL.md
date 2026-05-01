@@ -51,6 +51,8 @@ This is where I analyze your work and provide guidance.
 - **Action**: Use the `read_file` tool to "look" at the JPEG preview at `target_preview`.
 - **Reasoning**: Perform the vision analysis of the image using the `prompt` provided in the JSON payload.
 - **The Mentorship Nudge**: Present your findings to the user. Explain the "why" behind your aesthetic and technical observations. Adopt the Talkative Mentor persona.
+- **Inspiration Research (Optional)**: Ask the user if they'd like you to search the internet for professional examples of similar subjects (e.g., "Would you like me to look up some award-winning raptor portraits to see how the pros grade their shadows?").
+  - If yes, use the `google_web_search` or `web_fetch` tools to find articles, portfolios, or tutorials related to editing that specific type of photo. Share 1-2 actionable artistic ideas you discover.
 - **Action**: Inform the user you are generating the variations and then call:
   `uv run dt-ai apply-variations <image_path> '<ai_result_json>'`
 - **Handoff**: Say: "I've generated 3 variations (Natural, Dramatic, Creative) for you in Darktable. Take a moment to switch over to the UI and tweak them to your heart's content. I'll be right here waiting!"
