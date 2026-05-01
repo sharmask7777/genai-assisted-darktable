@@ -35,3 +35,24 @@ def discover_raw_files(path_pattern: str) -> List[str]:
                 discovered.append(os.path.abspath(str(f)))
                 
     return sorted(discovered)
+
+def get_neighboring_files(target_path: str, count: int = 2) -> List[str]:
+    """
+    Returns up to 'count' files before and after the target file in the same directory.
+    Files are sorted alphabetically.
+    """
+    abs_target = os.path.abspath(target_path)
+    dir_path = os.path.dirname(abs_target)
+    
+    # Use existing discovery to get all RAW files in the directory
+    all_files = discover_raw_files(dir_path)
+    
+    if abs_target not in all_files:
+        return []
+        
+    idx = all_files.index(abs_target)
+    
+    before = all_files[max(0, idx - count):idx]
+    after = all_files[idx + 1:min(len(all_files), idx + 1 + count)]
+    
+    return before + after
