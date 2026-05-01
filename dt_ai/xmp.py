@@ -64,3 +64,36 @@ def get_next_version_path(raw_path: str) -> str:
         if not os.path.exists(v_path):
             return v_path
         version += 1
+
+def load_xmp(path: str) -> ET.Element:
+    """
+    Loads an XMP file and returns the root Element.
+    """
+    # Note: ElementTree parser ignores xpacket processing instructions
+    tree = ET.parse(path)
+    return tree.getroot()
+
+def sync_history_end(root: ET.Element):
+    """
+    Updates the darktable:history_end attribute to match the number of items in history.
+    """
+    desc = root.find(f".//{{{NS['rdf']}}}Description")
+    seq = root.find(f".//{{{NS['rdf']}}}Seq")
+    if desc is not None and seq is not None:
+        count = len(list(seq))
+        desc.set(f"{{{NS['darktable']}}}history_end", str(count))
+
+def initialize_new_version(raw_path: str, target_xmp_path: str):
+    """
+    Initializes a new XMP version. 
+    If a base XMP exists, it is used as a template (cloned).
+    Otherwise, a new skeleton is generated.
+    """
+    base_xmp = f"{raw_path}.xmp"
+    if os.path.exists(base_xmp):
+        root = load_xmp(base_xmp)
+    else:
+        root = generate_skeleton()
+    
+    sync_history_end(root)
+    write_xmp(root, target_xmp_path)
