@@ -41,13 +41,12 @@ def test_analyze_image_failure(mock_exists, mock_available):
             analyze_image("test.jpg", "prompt")
         assert "gemini-cli failed" in str(excinfo.value)
 
-def test_aesthetic_prompt_content():
+def test_aesthetic_prompt_mentorship():
     from dt_ai.ai import AESTHETIC_PROMPT
-    assert len(AESTHETIC_PROMPT) > 100
-    assert "Darktable" in AESTHETIC_PROMPT
-    assert "Wildlife" in AESTHETIC_PROMPT
-    assert "JSON" in AESTHETIC_PROMPT
-    assert "natural" in AESTHETIC_PROMPT
+    assert "mentor" in AESTHETIC_PROMPT.lower()
+    assert "educational" in AESTHETIC_PROMPT.lower()
+    assert "explain" in AESTHETIC_PROMPT.lower()
+    assert "why" in AESTHETIC_PROMPT.lower()
 
 def test_parse_ai_response_valid():
     text = "```json\n{\"test\": 1}\n```"
