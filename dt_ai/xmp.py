@@ -84,3 +84,28 @@ def encode_params(values: List[float]) -> str:
     # Pack as little-endian floats ('<f')
     binary_data = b"".join(struct.pack('<f', v) for v in values)
     return binary_data.hex()
+
+def get_exposure_params(ev: float, black: float = 0.0) -> str:
+    """
+    Generates hex-encoded parameters for the 'exposure' v6 module.
+    Struct: { int32 mode, float black, float exposure, float percentile, float target }
+    """
+    # mode=0 (manual), percentile=0.5, target=0.0
+    data = struct.pack('<iffff', 0, black, ev, 0.5, 0.0)
+    return data.hex()
+
+def get_temperature_params(kelvin: float) -> str:
+    """
+    Generates hex-encoded parameters for the 'temperature' v3 module.
+    Struct: { float red, float green1, float blue, float green2 }
+    This uses a simplified mapping where 5500K is roughly [2.0, 1.0, 1.5, 1.0].
+    """
+    # Simple linear approximation for WB coefficients (relative to 5500K)
+    # Higher Kelvin = More Blue, Less Red
+    ratio = 5500.0 / kelvin
+    red = 2.0 * ratio
+    blue = 1.5 / ratio
+    green = 1.0
+    
+    data = struct.pack('<ffff', red, green, blue, green)
+    return data.hex()
