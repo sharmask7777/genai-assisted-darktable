@@ -1,6 +1,7 @@
 import click
 import os
 from dt_ai.discovery import discover_raw_files
+from dt_ai.processor import extract_preview
 
 @click.group()
 def cli():
@@ -21,9 +22,16 @@ def audit(path, dry_run):
         click.echo(f"No RAW files found at: {path}")
         return
 
-    click.echo(f"Discovered {len(files)} RAW file(s):")
+    click.echo(f"Discovered {len(files)} RAW file(s).")
+    
     for f in files:
-        click.echo(f"  - {os.path.basename(f)}")
+        basename = os.path.basename(f)
+        click.echo(f"Processing {basename}...")
+        try:
+            preview_path = extract_preview(f)
+            click.echo(f"  ✓ Extracting preview: {os.path.relpath(preview_path)}")
+        except Exception as e:
+            click.echo(f"  ✗ Error: {str(e)}")
 
 if __name__ == "__main__":
     cli()
