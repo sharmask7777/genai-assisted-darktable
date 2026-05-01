@@ -1,6 +1,7 @@
 import click
 import os
-from dt_ai.discovery import discover_raw_files
+import json
+from dt_ai.discovery import discover_raw_files, get_neighboring_files
 from dt_ai.processor import extract_preview
 from dt_ai.ai import analyze_image, AESTHETIC_PROMPT, parse_ai_response
 from dt_ai.xmp import generate_variations
@@ -31,30 +32,48 @@ def init_session(path):
     """Initialize or resume an editing session for a directory."""
     state_path = get_state_path(path)
     is_resuming = state_path.exists()
-    
     state = load_state(path)
-    save_state(path, state) # Ensure it exists on disk
-    
+    save_state(path, state)
     if is_resuming:
         click.echo(f"Resuming existing session for: {path}")
-        click.echo(f"  (Progress saved in {os.path.basename(state_path)})")
     else:
         click.echo(f"Started new session for: {path}")
-        click.echo(f"  (Initialized {os.path.basename(state_path)} in parent directory)")
+
+@cli.command()
+@click.argument('image_path', type=click.Path(exists=True))
+def agent_next(image_path):
+    """Internal command for Agent SOP: returns JSON payload for next steps."""
+    abs_path = os.path.abspath(image_path)
+    dir_path = os.path.dirname(abs_path)
+    
+    # 1. Load context
+    state = load_state(dir_path)
+    neighbors = get_neighboring_files(abs_path)
+    
+    # 2. Process Target
+    preview_path = extract_preview(abs_path)
+    raw_response = analyze_image(preview_path, AESTHETIC_PROMPT)
+    ai_result = parse_ai_response(raw_response)
+    
+    # 3. Build Payload
+    payload = {
+        "nudge": ai_result.get("audit", "I've analyzed your photo. Ready to proceed?"),
+        "target_image": abs_path,
+        "neighbor_images": neighbors,
+        "ai_result": ai_result
+    }
+    
+    click.echo(json.dumps(payload))
 
 def run_pipeline(path, dry_run, mode='audit'):
     if dry_run:
         click.echo("Running in DRY-RUN mode. No files will be modified.")
-    
     files = discover_raw_files(path)
     if not files:
         click.echo(f"No RAW files found at: {path}")
         return
-
     click.echo(f"Discovered {len(files)} RAW file(s). Starting {mode} pipeline...")
-    
     total_versions = 0
-    
     for f in files:
         basename = os.path.basename(f)
         click.echo(f"\nProcessing {basename}...")
@@ -65,7 +84,6 @@ def run_pipeline(path, dry_run, mode='audit'):
             ai_result = parse_ai_response(raw_response)
             report_path = save_audit_report(f, ai_result.get("audit", "No audit provided"))
             click.echo(f"  ✓ Audit report saved: {os.path.basename(report_path)}")
-            
             if mode == 'edit' and not dry_run:
                 versions = generate_variations(f, ai_result)
                 click.echo(f"  ✓ Generated {len(versions)} versions")
@@ -76,7 +94,6 @@ def run_pipeline(path, dry_run, mode='audit'):
                     click.confirm("    Please adjust denoise settings if needed. Continue with next file?", default=True)
         except Exception as e:
             click.echo(f"  ✗ Error: {str(e)}")
-
     click.echo("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
     click.echo(f" PIPELINE COMPLETE")
     click.echo(f" Files processed: {len(files)}")
