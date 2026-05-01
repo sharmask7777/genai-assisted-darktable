@@ -3,7 +3,7 @@ import os
 import json
 from dt_ai.discovery import discover_raw_files, get_neighboring_files
 from dt_ai.processor import extract_preview
-from dt_ai.ai import analyze_image, AESTHETIC_PROMPT, parse_ai_response
+from dt_ai.ai import analyze_image, AESTHETIC_PROMPT, parse_ai_response, synthesize_nudge
 from dt_ai.xmp import generate_variations
 from dt_ai.gui import open_in_darktable
 from dt_ai.state import load_state, save_state, get_state_path
@@ -52,26 +52,24 @@ def agent_next(image_path):
     
     # 2. Extract Previews (Target + Neighbors)
     previews = {}
-    
-    # Extract target (must succeed)
     target_preview = extract_preview(abs_path)
     previews[abs_path] = target_preview
-    
-    # Extract neighbors (resilient)
     for n in neighbors:
         try:
             previews[n] = extract_preview(n)
         except Exception:
-            # Skip neighbors that fail to extract
             pass
     
     # 3. Analyze Target
     raw_response = analyze_image(target_preview, AESTHETIC_PROMPT)
     ai_result = parse_ai_response(raw_response)
     
-    # 4. Build Payload
+    # 4. Synthesize Mentorship Nudge
+    nudge = synthesize_nudge(ai_result, neighbors, state)
+    
+    # 5. Build Payload
     payload = {
-        "nudge": ai_result.get("audit", "I've analyzed your photo. Ready to proceed?"),
+        "nudge": nudge,
         "target_image": abs_path,
         "neighbor_images": neighbors,
         "previews": previews,

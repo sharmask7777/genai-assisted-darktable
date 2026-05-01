@@ -77,3 +77,36 @@ def analyze_image(preview_path: str, prompt: str) -> str:
         raise RuntimeError(f"gemini-cli failed: {result.stderr}")
         
     return result.stdout.strip()
+
+def synthesize_nudge(ai_result: dict, neighbors: list, state: dict) -> str:
+    """
+    Combines AI analysis with project context to create a talkative mentorship nudge.
+    """
+    audit = ai_result.get("audit", "I've looked at your photo and have some thoughts.")
+    history = state.get("history", [])
+    
+    # 1. Greeting / Contextual Opening
+    if not history:
+        opening = "Welcome to our first image of this session! "
+    else:
+        opening = f"Great work on those previous shots. Let's dive into the next one. "
+        
+    # 2. Main Audit
+    body = f"\n\n{audit}\n\n"
+    
+    # 3. Lookahead Context
+    context_note = ""
+    if neighbors:
+        context_note = (
+            f"I've also peeked at the {len(neighbors)} adjacent frames in your folder to get a better sense of the sequence. "
+            "This seems like a particularly strong moment to focus our efforts on! "
+        )
+        
+    # 4. Technical Advice / Next Steps
+    closing = (
+        "\nI've gone ahead and generated three variations in Darktable for you to explore. "
+        "Feel free to tweak my suggestions—your artistic eye is the final judge. "
+        "Let me know when you're ready to move to the next frame!"
+    )
+    
+    return f"{opening}{context_note}{body}{closing}"
