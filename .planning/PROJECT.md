@@ -8,6 +8,7 @@ Empower photographers to delegate the initial "heavy lifting" of RAW processingâ
 
 ## Context
 - **User:** Wildlife and landscape photographer.
+- **Data Source:** \`~/Pictures\` (contains multiple RAW directories and existing XMP edits).
 - **Platform:** macOS (MacBook).
 - **Primary Tool:** Darktable (XMP sidecars).
 - **Intelligence:** Gemini CLI (Cloud APIs).

@@ -1,0 +1,22 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.12.2, pytest-9.0.3, pluggy-1.6.0
+rootdir: /Users/shaleensharma/workplace/gemini_ws/photo-editting
+configfile: pyproject.toml
+collected 5 items
+
+tests/test_ai.py ...F.                                                   [100%]
+
+=================================== FAILURES ===================================
+_______________________ test_aesthetic_prompt_mentorship _______________________
+
+    def test_aesthetic_prompt_mentorship():
+        from dt_ai.ai import AESTHETIC_PROMPT
+>       assert "mentor" in AESTHETIC_PROMPT.lower()
+E       assert 'mentor' in '\nyou are a senior photography editor and darktable expert. \nanalyze the provided image preview for a "first pass" r...loat_ev, "kelvin": float_k}\n  }\n}\n```\nkeep kelvin values between 2000 and 12000. exposure between -4.0 and +4.0.\n'
+E        +  where '\nyou are a senior photography editor and darktable expert. \nanalyze the provided image preview for a "first pass" r...loat_ev, "kelvin": float_k}\n  }\n}\n```\nkeep kelvin values between 2000 and 12000. exposure between -4.0 and +4.0.\n' = <built-in method lower of str object at 0x159109c00>()
+E        +    where <built-in method lower of str object at 0x159109c00> = '\nYou are a Senior Photography Editor and Darktable Expert. \nAnalyze the provided image preview for a "first pass" R...loat_ev, "kelvin": float_k}\n  }\n}\n```\nKeep Kelvin values between 2000 and 12000. Exposure between -4.0 and +4.0.\n'.lower
+
+tests/test_ai.py:46: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_ai.py::test_aesthetic_prompt_mentorship - assert 'mentor' i...
+========================= 1 failed, 4 passed in 0.05s ==========================

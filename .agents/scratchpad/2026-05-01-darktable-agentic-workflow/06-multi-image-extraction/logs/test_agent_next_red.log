@@ -1,0 +1,71 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.12.2, pytest-9.0.3, pluggy-1.6.0
+rootdir: /Users/shaleensharma/workplace/gemini_ws/photo-editting
+configfile: pyproject.toml
+collected 2 items
+
+tests/test_agent_next.py FF                                              [100%]
+
+=================================== FAILURES ===================================
+_________________________ test_agent_next_json_output __________________________
+
+tmp_path = PosixPath('/private/var/folders/2w/8ly4glt14d50w43q9zbvlf600000gn/T/pytest-of-shaleensharma/pytest-37/test_agent_next_json_output0')
+
+    def test_agent_next_json_output(tmp_path):
+        f = tmp_path / "test.ARW"
+        f.write_text("data")
+    
+        runner = CliRunner()
+    
+        with patch("dt_ai.main.extract_preview") as mock_extract,          patch("dt_ai.main.analyze_image") as mock_analyze,          patch("dt_ai.main.get_neighboring_files") as mock_neighbors,          patch("dt_ai.main.load_state") as mock_state:
+    
+            mock_extract.return_value = "test.jpg"
+            mock_analyze.return_value = "```json\n{\"audit\": \"AI audit\", \"recommendations\": []}\n```"
+            mock_neighbors.return_value = ["n1.ARW", "n2.ARW"]
+            mock_state.return_value = {"history": []}
+    
+            result = runner.invoke(cli, ['agent-next', str(f)])
+    
+        assert result.exit_code == 0
+        payload = json.loads(result.output)
+    
+        # Check for preview mapping
+>       assert "previews" in payload
+E       AssertionError: assert 'previews' in {'ai_result': {'audit': 'AI audit', 'recommendations': []}, 'neighbor_images': ['n1.ARW', 'n2.ARW'], 'nudge': 'AI audi...r/folders/2w/8ly4glt14d50w43q9zbvlf600000gn/T/pytest-of-shaleensharma/pytest-37/test_agent_next_json_output0/test.ARW'}
+
+tests/test_agent_next.py:26: AssertionError
+_____________________ test_agent_next_neighbor_resilience ______________________
+
+tmp_path = PosixPath('/private/var/folders/2w/8ly4glt14d50w43q9zbvlf600000gn/T/pytest-of-shaleensharma/pytest-37/test_agent_next_neighbor_resil0')
+
+    def test_agent_next_neighbor_resilience(tmp_path):
+        f = tmp_path / "test.ARW"
+        f.write_text("data")
+    
+        runner = CliRunner()
+    
+        with patch("dt_ai.main.extract_preview") as mock_extract,          patch("dt_ai.main.analyze_image") as mock_analyze,          patch("dt_ai.main.get_neighboring_files") as mock_neighbors,          patch("dt_ai.main.load_state") as mock_state:
+    
+            def side_effect(path, output_path=None):
+                if "n1.ARW" in path:
+                    raise RuntimeError("Extraction failed")
+                return "ok.jpg"
+    
+            mock_extract.side_effect = side_effect
+            mock_analyze.return_value = "```json\n{\"audit\": \"A\", \"recommendations\": []}\n```"
+            mock_neighbors.return_value = ["n1.ARW"]
+            mock_state.return_value = {"history": []}
+    
+            result = runner.invoke(cli, ['agent-next', str(f)])
+    
+        assert result.exit_code == 0
+        payload = json.loads(result.output)
+>       assert payload["previews"][str(f.absolute())] == "ok.jpg"
+               ^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'previews'
+
+tests/test_agent_next.py:53: KeyError
+=========================== short test summary info ============================
+FAILED tests/test_agent_next.py::test_agent_next_json_output - AssertionError...
+FAILED tests/test_agent_next.py::test_agent_next_neighbor_resilience - KeyErr...
+============================== 2 failed in 0.07s ===============================

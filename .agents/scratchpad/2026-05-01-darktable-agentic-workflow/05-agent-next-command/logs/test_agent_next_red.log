@@ -1,0 +1,57 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.12.2, pytest-9.0.3, pluggy-1.6.0
+rootdir: /Users/shaleensharma/workplace/gemini_ws/photo-editting
+configfile: pyproject.toml
+collected 1 item
+
+tests/test_agent_next.py F                                               [100%]
+
+=================================== FAILURES ===================================
+_________________________ test_agent_next_json_output __________________________
+
+tmp_path = PosixPath('/private/var/folders/2w/8ly4glt14d50w43q9zbvlf600000gn/T/pytest-of-shaleensharma/pytest-34/test_agent_next_json_output0')
+
+    def test_agent_next_json_output(tmp_path):
+        f = tmp_path / "test.ARW"
+        f.write_text("data")
+    
+        runner = CliRunner()
+    
+>       with patch("dt_ai.main.extract_preview") as mock_extract,          patch("dt_ai.main.analyze_image") as mock_analyze,          patch("dt_ai.main.get_neighboring_files") as mock_neighbors,          patch("dt_ai.main.load_state") as mock_state:
+
+tests/test_agent_next.py:13: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/homebrew/Caskroom/miniconda/base/lib/python3.12/unittest/mock.py:1455: in __enter__
+    original, local = self.get_original()
+                      ^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <unittest.mock._patch object at 0x11897af00>
+
+    def get_original(self):
+        target = self.getter()
+        name = self.attribute
+    
+        original = DEFAULT
+        local = False
+    
+        try:
+            original = target.__dict__[name]
+        except (AttributeError, KeyError):
+            original = getattr(target, name, DEFAULT)
+        else:
+            local = True
+    
+        if name in _builtins and isinstance(target, ModuleType):
+            self.create = True
+    
+        if not self.create and original is DEFAULT:
+>           raise AttributeError(
+                "%s does not have the attribute %r" % (target, name)
+            )
+E           AttributeError: <module 'dt_ai.main' from '/Users/shaleensharma/workplace/gemini_ws/photo-editting/dt_ai/main.py'> does not have the attribute 'get_neighboring_files'
+
+/opt/homebrew/Caskroom/miniconda/base/lib/python3.12/unittest/mock.py:1428: AttributeError
+=========================== short test summary info ============================
+FAILED tests/test_agent_next.py::test_agent_next_json_output - AttributeError...
+============================== 1 failed in 0.09s ===============================

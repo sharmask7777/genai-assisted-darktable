@@ -1,0 +1,47 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.12.2, pytest-9.0.3, pluggy-1.6.0
+rootdir: /Users/shaleensharma/workplace/gemini_ws/photo-editting
+configfile: pyproject.toml
+collected 3 items
+
+tests/test_cli_state.py FF.                                              [100%]
+
+=================================== FAILURES ===================================
+____________________________ test_init_session_new _____________________________
+
+tmp_path = PosixPath('/private/var/folders/2w/8ly4glt14d50w43q9zbvlf600000gn/T/pytest-of-shaleensharma/pytest-29/test_init_session_new0')
+
+    def test_init_session_new(tmp_path):
+        shoot_dir = tmp_path / "shoot"
+        shoot_dir.mkdir()
+    
+        runner = CliRunner()
+        result = runner.invoke(cli, ['init-session', str(shoot_dir)])
+    
+>       assert result.exit_code == 0
+E       assert 2 == 0
+E        +  where 2 = <Result SystemExit(2)>.exit_code
+
+tests/test_cli_state.py:14: AssertionError
+__________________________ test_init_session_resumed ___________________________
+
+tmp_path = PosixPath('/private/var/folders/2w/8ly4glt14d50w43q9zbvlf600000gn/T/pytest-of-shaleensharma/pytest-29/test_init_session_resumed0')
+
+    def test_init_session_resumed(tmp_path):
+        shoot_dir = tmp_path / "existing"
+        shoot_dir.mkdir()
+        state_file = tmp_path / ".dt-ai-progress.json"
+        state_file.write_text(json.dumps({"history": []}))
+    
+        runner = CliRunner()
+        result = runner.invoke(cli, ['init-session', str(shoot_dir)])
+    
+>       assert result.exit_code == 0
+E       assert 2 == 0
+E        +  where 2 = <Result SystemExit(2)>.exit_code
+
+tests/test_cli_state.py:28: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_cli_state.py::test_init_session_new - assert 2 == 0
+FAILED tests/test_cli_state.py::test_init_session_resumed - assert 2 == 0
+========================= 2 failed, 1 passed in 0.04s ==========================

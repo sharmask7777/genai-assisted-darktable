@@ -1,0 +1,103 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.12.2, pytest-9.0.3, pluggy-1.6.0
+rootdir: /Users/shaleensharma/workplace/gemini_ws/photo-editting
+configfile: pyproject.toml
+collected 2 items
+
+tests/test_integration.py FF                                             [100%]
+
+=================================== FAILURES ===================================
+_________________________ test_edit_command_full_flow __________________________
+
+tmp_path = PosixPath('/private/var/folders/2w/8ly4glt14d50w43q9zbvlf600000gn/T/pytest-of-shaleensharma/pytest-21/test_edit_command_full_flow0')
+
+    def test_edit_command_full_flow(tmp_path):
+        f = tmp_path / "test.ARW"
+        f.write_text("dummy")
+    
+        runner = CliRunner()
+    
+        # Mock all external systems
+>       with patch("dt_ai.main.extract_preview") as mock_extract,          patch("dt_ai.main.analyze_image") as mock_analyze,          patch("dt_ai.main.generate_variations") as mock_gen,          patch("dt_ai.main.open_in_darktable") as mock_open,          patch("click.confirm") as mock_confirm:
+
+tests/test_integration.py:13: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/homebrew/Caskroom/miniconda/base/lib/python3.12/unittest/mock.py:1455: in __enter__
+    original, local = self.get_original()
+                      ^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <unittest.mock._patch object at 0x1066bdc40>
+
+    def get_original(self):
+        target = self.getter()
+        name = self.attribute
+    
+        original = DEFAULT
+        local = False
+    
+        try:
+            original = target.__dict__[name]
+        except (AttributeError, KeyError):
+            original = getattr(target, name, DEFAULT)
+        else:
+            local = True
+    
+        if name in _builtins and isinstance(target, ModuleType):
+            self.create = True
+    
+        if not self.create and original is DEFAULT:
+>           raise AttributeError(
+                "%s does not have the attribute %r" % (target, name)
+            )
+E           AttributeError: <module 'dt_ai.main' from '/Users/shaleensharma/workplace/gemini_ws/photo-editting/dt_ai/main.py'> does not have the attribute 'generate_variations'
+
+/opt/homebrew/Caskroom/miniconda/base/lib/python3.12/unittest/mock.py:1428: AttributeError
+__________________________ test_edit_command_dry_run ___________________________
+
+tmp_path = PosixPath('/private/var/folders/2w/8ly4glt14d50w43q9zbvlf600000gn/T/pytest-of-shaleensharma/pytest-21/test_edit_command_dry_run0')
+
+    def test_edit_command_dry_run(tmp_path):
+        f = tmp_path / "test.ARW"
+        f.write_text("dummy")
+    
+        runner = CliRunner()
+>       with patch("dt_ai.main.extract_preview") as mock_extract,          patch("dt_ai.main.analyze_image") as mock_analyze,          patch("dt_ai.main.generate_variations") as mock_gen:
+
+tests/test_integration.py:39: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/homebrew/Caskroom/miniconda/base/lib/python3.12/unittest/mock.py:1455: in __enter__
+    original, local = self.get_original()
+                      ^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <unittest.mock._patch object at 0x106748590>
+
+    def get_original(self):
+        target = self.getter()
+        name = self.attribute
+    
+        original = DEFAULT
+        local = False
+    
+        try:
+            original = target.__dict__[name]
+        except (AttributeError, KeyError):
+            original = getattr(target, name, DEFAULT)
+        else:
+            local = True
+    
+        if name in _builtins and isinstance(target, ModuleType):
+            self.create = True
+    
+        if not self.create and original is DEFAULT:
+>           raise AttributeError(
+                "%s does not have the attribute %r" % (target, name)
+            )
+E           AttributeError: <module 'dt_ai.main' from '/Users/shaleensharma/workplace/gemini_ws/photo-editting/dt_ai/main.py'> does not have the attribute 'generate_variations'
+
+/opt/homebrew/Caskroom/miniconda/base/lib/python3.12/unittest/mock.py:1428: AttributeError
+=========================== short test summary info ============================
+FAILED tests/test_integration.py::test_edit_command_full_flow - AttributeErro...
+FAILED tests/test_integration.py::test_edit_command_dry_run - AttributeError:...
+============================== 2 failed in 0.12s ===============================

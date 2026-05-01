@@ -1,0 +1,19 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.12.2, pytest-9.0.3, pluggy-1.6.0
+rootdir: /Users/shaleensharma/workplace/gemini_ws/photo-editting
+configfile: pyproject.toml
+collected 4 items
+
+tests/test_ai.py ...F                                                    [100%]
+
+=================================== FAILURES ===================================
+________________________ test_aesthetic_prompt_content _________________________
+
+    def test_aesthetic_prompt_content():
+>       from dt_ai.ai import AESTHETIC_PROMPT
+E       ImportError: cannot import name 'AESTHETIC_PROMPT' from 'dt_ai.ai' (/Users/shaleensharma/workplace/gemini_ws/photo-editting/dt_ai/ai.py)
+
+tests/test_ai.py:45: ImportError
+=========================== short test summary info ============================
+FAILED tests/test_ai.py::test_aesthetic_prompt_content - ImportError: cannot ...
+========================= 1 failed, 3 passed in 0.05s ==========================
