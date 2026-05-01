@@ -5,6 +5,7 @@ from dt_ai.processor import extract_preview
 from dt_ai.ai import analyze_image, AESTHETIC_PROMPT, parse_ai_response
 from dt_ai.xmp import generate_variations
 from dt_ai.gui import open_in_darktable
+from dt_ai.state import load_state, save_state, get_state_path
 
 def save_audit_report(raw_path: str, audit_text: str) -> str:
     """Saves the AI audit text to a Markdown file alongside the RAW image."""
@@ -24,6 +25,23 @@ def cli():
     """Darktable GenAI Assistant"""
     pass
 
+@cli.command()
+@click.argument('path', type=click.Path(exists=True, file_okay=False))
+def init_session(path):
+    """Initialize or resume an editing session for a directory."""
+    state_path = get_state_path(path)
+    is_resuming = state_path.exists()
+    
+    state = load_state(path)
+    save_state(path, state) # Ensure it exists on disk
+    
+    if is_resuming:
+        click.echo(f"Resuming existing session for: {path}")
+        click.echo(f"  (Progress saved in {os.path.basename(state_path)})")
+    else:
+        click.echo(f"Started new session for: {path}")
+        click.echo(f"  (Initialized {os.path.basename(state_path)} in parent directory)")
+
 def run_pipeline(path, dry_run, mode='audit'):
     if dry_run:
         click.echo("Running in DRY-RUN mode. No files will be modified.")
@@ -41,32 +59,21 @@ def run_pipeline(path, dry_run, mode='audit'):
         basename = os.path.basename(f)
         click.echo(f"\nProcessing {basename}...")
         try:
-            # 1. Extract Preview
             preview_path = extract_preview(f)
             click.echo(f"  ✓ Extracted preview: {os.path.relpath(preview_path)}")
-            
-            # 2. Analyze Image
-            click.echo(f"  ... Performing AI aesthetic audit")
             raw_response = analyze_image(preview_path, AESTHETIC_PROMPT)
             ai_result = parse_ai_response(raw_response)
-            
-            # 3. Save Report
             report_path = save_audit_report(f, ai_result.get("audit", "No audit provided"))
             click.echo(f"  ✓ Audit report saved: {os.path.basename(report_path)}")
             
             if mode == 'edit' and not dry_run:
-                # 4. Generate Variations
-                click.echo(f"  ... Generating AI variations")
                 versions = generate_variations(f, ai_result)
                 click.echo(f"  ✓ Generated {len(versions)} versions")
                 total_versions += len(versions)
-                
-                # 5. Interactive Denoise Handoff
                 if needs_denoise_interaction(ai_result.get("recommendations", [])):
                     click.echo("  ! Take a Call: Denoise recommended. Opening Darktable for validation...")
                     open_in_darktable(f)
                     click.confirm("    Please adjust denoise settings if needed. Continue with next file?", default=True)
-            
         except Exception as e:
             click.echo(f"  ✗ Error: {str(e)}")
 
