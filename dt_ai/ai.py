@@ -1,6 +1,3 @@
-import subprocess
-import shutil
-import os
 import json
 import re
 
@@ -24,14 +21,14 @@ Recommend specific Darktable modules. For each, give a 1-sentence "mentor tip" o
 ### 4. Variation Parameters (JSON)
 You MUST provide 3 distinct editing variations in a JSON code block at the end.
 - **natural**: Balanced, accurate, "true-to-life".
-- **dramatic**: High contrast, moody, explain how you're using light here.
+- **dramatic**: High contrast, moody, high impact.
 - **creative**: An artistic interpretation to inspire the user.
 
 Required JSON format:
 ```json
 {
   "audit": "Your full, talkative, and educational audit text here",
-  "recommendations": ["exposure", "denoiseprofile", ...],
+  "recommendations": ["exposure", "temperature", "colorbalance rgb"],
   "variations": {
     "natural": {"exposure": float_ev, "kelvin": float_k},
     "dramatic": {"exposure": float_ev, "kelvin": float_k},
@@ -39,12 +36,11 @@ Required JSON format:
   }
 }
 ```
-Keep Kelvin values between 2000 and 12000. Exposure between -4.0 and +4.0.
+**CRITICAL TECHNICAL CONSTRAINTS:**
+- **Exposure**: Range -4.0 to +4.0. (Maps to Darktable Exposure v6).
+- **Kelvin**: Range 2000.0 to 12000.0. (Maps to Darktable Temperature v3).
+- **Format**: Ensure numbers are standard floats.
 """
-
-def is_gemini_cli_available() -> bool:
-    """Checks if gemini-cli is installed and in the system PATH."""
-    return shutil.which("gemini-cli") is not None
 
 def parse_ai_response(text: str) -> dict:
     """
@@ -53,30 +49,16 @@ def parse_ai_response(text: str) -> dict:
     # Look for JSON block
     match = re.search(r"```json\s*(\{.*?\})\s*```", text, re.DOTALL)
     if not match:
+        # Try to find any JSON-like structure if code blocks are missing
+        match = re.search(r"(\{.*?\})", text, re.DOTALL)
+        
+    if not match:
         raise ValueError("No JSON block found in AI response")
     
     try:
         return json.loads(match.group(1))
     except json.JSONDecodeError as e:
         raise ValueError(f"Malformed JSON in AI response: {str(e)}")
-
-def analyze_image(preview_path: str, prompt: str) -> str:
-    """
-    Sends an image preview to Gemini CLI for analysis.
-    """
-    if not is_gemini_cli_available():
-        raise RuntimeError("gemini-cli not found. Please install it to use AI features.")
-        
-    if not os.path.exists(preview_path):
-        raise FileNotFoundError(f"Preview file not found: {preview_path}")
-
-    cmd = ["gemini-cli", preview_path, prompt]
-    result = subprocess.run(cmd, capture_output=True, text=True)
-    
-    if result.returncode != 0:
-        raise RuntimeError(f"gemini-cli failed: {result.stderr}")
-        
-    return result.stdout.strip()
 
 def synthesize_nudge(ai_result: dict, neighbors: list, state: dict) -> str:
     """

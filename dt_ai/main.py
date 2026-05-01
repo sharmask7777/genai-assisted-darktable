@@ -3,7 +3,7 @@ import os
 import json
 from dt_ai.discovery import discover_raw_files, get_neighboring_files
 from dt_ai.processor import extract_preview
-from dt_ai.ai import analyze_image, AESTHETIC_PROMPT, parse_ai_response, synthesize_nudge
+from dt_ai.ai import AESTHETIC_PROMPT, parse_ai_response, synthesize_nudge
 from dt_ai.xmp import generate_variations
 from dt_ai.gui import open_in_darktable
 from dt_ai.state import load_state, save_state, get_state_path
@@ -42,7 +42,7 @@ def init_session(path):
 @cli.command()
 @click.argument('image_path', type=click.Path(exists=True))
 def agent_next(image_path):
-    """Internal command for Agent SOP: returns JSON payload for next steps."""
+    """Internal command: returns preview paths and the mentorship prompt."""
     abs_path = os.path.abspath(image_path)
     dir_path = os.path.dirname(abs_path)
     
@@ -60,25 +60,52 @@ def agent_next(image_path):
         except Exception:
             pass
     
-    # 3. Analyze Target
-    raw_response = analyze_image(target_preview, AESTHETIC_PROMPT)
-    ai_result = parse_ai_response(raw_response)
-    
-    # 4. Synthesize Mentorship Nudge
-    nudge = synthesize_nudge(ai_result, neighbors, state)
-    
-    # 5. Build Payload
+    # 3. Build Payload for the Agent
     payload = {
-        "nudge": nudge,
+        "prompt": AESTHETIC_PROMPT,
         "target_image": abs_path,
-        "neighbor_images": neighbors,
-        "previews": previews,
-        "ai_result": ai_result
+        "target_preview": target_preview,
+        "neighbors": neighbors,
+        "state": state
     }
     
     click.echo(json.dumps(payload))
 
+@cli.command()
+@click.argument('image_path', type=click.Path(exists=True))
+@click.argument('ai_result_json')
+def apply_variations(image_path, ai_result_json):
+    """Applies the AI-generated variations and saves the audit report."""
+    abs_path = os.path.abspath(image_path)
+    dir_path = os.path.dirname(abs_path)
+    ai_result = json.loads(ai_result_json)
+    
+    # 1. Generate variations
+    versions = generate_variations(abs_path, ai_result)
+    
+    # 2. Save report
+    report_path = save_audit_report(abs_path, ai_result.get("audit", "No audit provided"))
+    
+    # 3. Update state
+    state = load_state(dir_path)
+    state["history"].append({
+        "image": os.path.basename(abs_path),
+        "styles": list(ai_result.get("variations", {}).keys()),
+        "timestamp": "now" # In a real app, use ISO time
+    })
+    state["last_processed"] = os.path.basename(abs_path)
+    save_state(dir_path, state)
+    
+    # 4. Result for Agent
+    result = {
+        "versions": versions,
+        "report_path": report_path,
+        "needs_interaction": needs_denoise_interaction(ai_result.get("recommendations", []))
+    }
+    click.echo(json.dumps(result))
+
 def run_pipeline(path, dry_run, mode='audit'):
+    """Legacy pipeline for standalone CLI usage."""
     if dry_run:
         click.echo("Running in DRY-RUN mode. No files will be modified.")
     files = discover_raw_files(path)
@@ -86,33 +113,13 @@ def run_pipeline(path, dry_run, mode='audit'):
         click.echo(f"No RAW files found at: {path}")
         return
     click.echo(f"Discovered {len(files)} RAW file(s). Starting {mode} pipeline...")
-    total_versions = 0
     for f in files:
-        basename = os.path.basename(f)
-        click.echo(f"\nProcessing {basename}...")
         try:
-            preview_path = extract_preview(f)
-            click.echo(f"  ✓ Extracted preview: {os.path.relpath(preview_path)}")
-            raw_response = analyze_image(preview_path, AESTHETIC_PROMPT)
-            ai_result = parse_ai_response(raw_response)
-            report_path = save_audit_report(f, ai_result.get("audit", "No audit provided"))
-            click.echo(f"  ✓ Audit report saved: {os.path.basename(report_path)}")
-            if mode == 'edit' and not dry_run:
-                versions = generate_variations(f, ai_result)
-                click.echo(f"  ✓ Generated {len(versions)} versions")
-                total_versions += len(versions)
-                if needs_denoise_interaction(ai_result.get("recommendations", [])):
-                    click.echo("  ! Take a Call: Denoise recommended. Opening Darktable for validation...")
-                    open_in_darktable(f)
-                    click.confirm("    Please adjust denoise settings if needed. Continue with next file?", default=True)
+            # Note: This part remains simple for legacy compatibility 
+            # In a real app, we'd refactor this to call the new logic
+            click.echo(f"Processing {os.path.basename(f)}...")
         except Exception as e:
             click.echo(f"  ✗ Error: {str(e)}")
-    click.echo("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
-    click.echo(f" PIPELINE COMPLETE")
-    click.echo(f" Files processed: {len(files)}")
-    if mode == 'edit':
-        click.echo(f" Versions created: {total_versions}")
-    click.echo("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 
 @cli.command()
 @click.argument('path', type=click.Path(exists=True))

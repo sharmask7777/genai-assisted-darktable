@@ -184,23 +184,27 @@ class DocUpdater:
         self.repo_root = repo_root
 
     def update_readme(self):
-        """Appends the GenAI Skills section to README.md."""
+        """Appends a user-friendly GenAI Skills section to README.md."""
         readme_path = os.path.join(self.repo_root, "README.md")
         
         skill_docs = """
-## GenAI Skills
-This project includes specialized agentic skills to maintain codebase quality and industry parity.
+## AI Assistant Capabilities
+This project is "AI-Ready." If you are using an AI coding assistant (like Claude, Gemini, or Kiro), you can give it special "skills" to help maintain this project.
 
-### 1. darktable-parity-sync
-Maintains parity with latest Darktable industry standards, modules, and XMP schemas.
+### 🔄 Darktable Parity Sync
+Darktable evolves quickly. This skill allows your AI assistant to research the latest professional photography standards and automatically update this tool's internal logic to match. It ensures your AI-generated edits always use the most modern Darktable modules (like AgX).
 
-**How to invoke:**
-- **Claude:** `/activate_skill darktable-parity-sync`
-- **Gemini:** `/activate_skill darktable-parity-sync`
-- **Kiro:** `/activate_skill darktable-parity-sync`
+**How to give this skill to your AI:**
+If you are in a chat with an AI assistant, simply copy and paste the command below into the chat:
+
+```bash
+/activate_skill darktable-parity-sync
+```
+
+Once activated, the AI will know how to scan this codebase and research industry updates for you.
 """
         
-        mode = "a" if os.path.exists(readme_path) else "w"
+        mode = "a" if os.path.exists(readme_path) and os.path.getsize(readme_path) > 0 else "w"
         with open(readme_path, mode, encoding="utf-8") as f:
             if mode == "a":
                 f.write("\n")

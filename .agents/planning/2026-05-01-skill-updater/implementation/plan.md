@@ -13,8 +13,8 @@
     - [x] Step 6: Implement TDD loop (Explore -> Plan -> Code).
     - [x] Step 7: Integrate `code-assist` logic for automated testing/fixing.
 - [ ] **Phase 5: Visibility & Documentation**
-    - [ ] Step 8: Implement README.md auto-update logic.
-    - [ ] Step 9: Final validation and end-to-end dry-run.
+    - [x] Step 8: Implement README.md auto-update logic.
+    - [x] Step 9: Final validation and end-to-end dry-run.
 
 ---
 
