@@ -29,4 +29,15 @@
 - **GUI-01**: Adding a graphical user interface.
 
 ## Traceability
-*(To be populated by Roadmap)*
+
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| MCP-01 | Phase 1 | Pending |
+| MCP-02 | Phase 1 | Pending |
+| DT-01 | Phase 2 | Pending |
+| DT-02 | Phase 3 | Pending |
+| DT-03 | Phase 3 | Pending |
+| PAR-01 | Phase 4 | Pending |
+| PAR-02 | Phase 5 | Pending |
+| VER-01 | Phase 6 | Pending |
+| VER-02 | Phase 7 | Pending |
