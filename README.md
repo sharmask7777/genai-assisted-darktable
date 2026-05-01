@@ -6,6 +6,16 @@ Think of it as having a senior photography editor sitting next to you, looking a
 
 ---
 
+## 📥 Get the Code (New to GitHub?)
+
+If you don't know how to use GitHub, follow these 3 simple steps to get started:
+
+1. **Download**: Click the green **"Code"** button at the top of this page and select **"Download ZIP"**.
+2. **Unzip**: Find the `genai-assisted-darktable-main.zip` in your Downloads folder and double-click it to unzip it.
+3. **Move**: Move the resulting folder to a permanent place, like your `Documents` or `Pictures` folder.
+
+---
+
 ## 🦉 How it Works (In Plain English)
 1. **The Hand-off**: You tell the AI which directory your photos are in.
 2. **The Preview**: The tool creates a small, high-quality copy of your photo for the AI to look at (this saves time and internet data).
@@ -19,16 +29,22 @@ Think of it as having a senior photography editor sitting next to you, looking a
 
 ### 1. The Essentials
 Before starting, ensure you have these installed on your Mac:
-- **Darktable**: The standard photography app.
+- **Darktable**: The standard photography app. [Download here](https://www.darktable.org/install/).
 - **Gemini CLI**: The tool that talks to the AI. (Ensure you have run `gemini auth` in your terminal).
-- **Python**: The language this tool is built in.
+- **Python (uv)**: We use a tool called `uv` to manage the "brain" of the assistant. Open your **Terminal** (press `Cmd + Space` and type "Terminal") and run:
+  ```bash
+  curl -LsSf https://astral.sh/uv/install.sh | sh
+  ```
 
 ### 2. Installation
-Open your terminal, go to this project's folder, and run:
-```bash
-uv sync
-```
-*This setting up the "brain" of the assistant on your computer.*
+Now, let's set up the assistant. In your **Terminal**, you need to "go into" the folder you downloaded:
+1. Type `cd ` (type cd followed by a space).
+2. **Drag and drop** the folder you unzipped directly into the Terminal window. It will look something like this: `cd /Users/yourname/Documents/genai-assisted-darktable`
+3. Press **Enter**.
+4. Run this command to install everything:
+   ```bash
+   uv sync
+   ```
 
 ### 3. Connect the Assistant to your CLI
 Run this command once to make the "Mentorship" instructions available to your AI:
