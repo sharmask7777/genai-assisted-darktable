@@ -40,3 +40,11 @@ def test_analyze_image_failure(mock_exists, mock_available):
         with pytest.raises(RuntimeError) as excinfo:
             analyze_image("test.jpg", "prompt")
         assert "gemini-cli failed" in str(excinfo.value)
+
+def test_aesthetic_prompt_content():
+    from dt_ai.ai import AESTHETIC_PROMPT
+    assert len(AESTHETIC_PROMPT) > 100
+    assert "Darktable" in AESTHETIC_PROMPT
+    assert "Wildlife" in AESTHETIC_PROMPT
+    assert "Landscape" in AESTHETIC_PROMPT
+    assert "Denoise (profiled)" in AESTHETIC_PROMPT
