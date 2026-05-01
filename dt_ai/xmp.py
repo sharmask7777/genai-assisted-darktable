@@ -44,3 +44,23 @@ def write_xmp(root: ET.Element, path: str):
         f.write(header)
         f.write(xml_str)
         f.write(footer)
+
+def get_next_version_path(raw_path: str) -> str:
+    """
+    Returns the path for the next available sidecar version.
+    Version 0: basename.ext.xmp
+    Version 1+: basename_nn.ext.xmp
+    """
+    # Version 0 check
+    v0_path = f"{raw_path}.xmp"
+    if not os.path.exists(v0_path):
+        return v0_path
+        
+    # Find next available _nn version
+    base, ext = os.path.splitext(raw_path)
+    version = 1
+    while True:
+        v_path = f"{base}_{version:02d}{ext}.xmp"
+        if not os.path.exists(v_path):
+            return v_path
+        version += 1
