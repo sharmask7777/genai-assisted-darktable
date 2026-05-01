@@ -50,16 +50,31 @@ def agent_next(image_path):
     state = load_state(dir_path)
     neighbors = get_neighboring_files(abs_path)
     
-    # 2. Process Target
-    preview_path = extract_preview(abs_path)
-    raw_response = analyze_image(preview_path, AESTHETIC_PROMPT)
+    # 2. Extract Previews (Target + Neighbors)
+    previews = {}
+    
+    # Extract target (must succeed)
+    target_preview = extract_preview(abs_path)
+    previews[abs_path] = target_preview
+    
+    # Extract neighbors (resilient)
+    for n in neighbors:
+        try:
+            previews[n] = extract_preview(n)
+        except Exception:
+            # Skip neighbors that fail to extract
+            pass
+    
+    # 3. Analyze Target
+    raw_response = analyze_image(target_preview, AESTHETIC_PROMPT)
     ai_result = parse_ai_response(raw_response)
     
-    # 3. Build Payload
+    # 4. Build Payload
     payload = {
         "nudge": ai_result.get("audit", "I've analyzed your photo. Ready to proceed?"),
         "target_image": abs_path,
         "neighbor_images": neighbors,
+        "previews": previews,
         "ai_result": ai_result
     }
     
