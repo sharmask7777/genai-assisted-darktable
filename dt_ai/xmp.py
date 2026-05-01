@@ -109,3 +109,29 @@ def get_temperature_params(kelvin: float) -> str:
     
     data = struct.pack('<ffff', red, green, blue, green)
     return data.hex()
+
+def add_history_item(root: ET.Element, operation: str, params: str, modversion: str, enabled: bool = True):
+    """
+    Injects a new processing module into the history stack.
+    """
+    seq = root.find(f".//{{{NS['rdf']}}}Seq")
+    if seq is None:
+        raise RuntimeError("Could not find rdf:Seq in XMP history")
+        
+    num = len(list(seq))
+    
+    # Required attributes for Darktable to recognize the module
+    attribs = {
+        f"{{{NS['darktable']}}}num": str(num),
+        f"{{{NS['darktable']}}}operation": operation,
+        f"{{{NS['darktable']}}}enabled": "1" if enabled else "0",
+        f"{{{NS['darktable']}}}modversion": modversion,
+        f"{{{NS['darktable']}}}params": params,
+        f"{{{NS['darktable']}}}multi_name": "",
+        f"{{{NS['darktable']}}}multi_priority": "0",
+        f"{{{NS['darktable']}}}blendop_version": "11",
+        f"{{{NS['darktable']}}}blendop_params": "gz14eJxjYIAACQYYOOHEgAZY0QVwggZ7CB6pfNoAAE8gGQg=", # Standard bypass
+    }
+    
+    ET.SubElement(seq, f"{{{NS['rdf']}}}li", attribs)
+    sync_history_end(root)
