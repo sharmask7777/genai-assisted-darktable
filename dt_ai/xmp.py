@@ -135,3 +135,39 @@ def add_history_item(root: ET.Element, operation: str, params: str, modversion: 
     
     ET.SubElement(seq, f"{{{NS['rdf']}}}li", attribs)
     sync_history_end(root)
+
+def generate_variations(raw_path: str, ai_result: dict) -> List[str]:
+    """
+    Generates three Darktable version sidecars based on AI variations.
+    Returns the list of generated XMP paths.
+    """
+    generated = []
+    variations = ai_result.get("variations", {})
+    
+    # We want exactly these 3, in order
+    styles = ["natural", "dramatic", "creative"]
+    
+    for style in styles:
+        params = variations.get(style)
+        if not params:
+            continue
+            
+        target_path = get_next_version_path(raw_path)
+        initialize_new_version(raw_path, target_path)
+        
+        # Load the newly initialized version
+        root = load_xmp(target_path)
+        
+        # Inject Exposure
+        exp_hex = get_exposure_params(params.get("exposure", 0.0))
+        add_history_item(root, "exposure", exp_hex, "6")
+        
+        # Inject Temperature
+        temp_hex = get_temperature_params(params.get("kelvin", 5500.0))
+        add_history_item(root, "temperature", temp_hex, "3")
+        
+        # Write back
+        write_xmp(root, target_path)
+        generated.append(target_path)
+        
+    return generated

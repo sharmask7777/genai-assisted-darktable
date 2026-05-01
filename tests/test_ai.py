@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import patch, MagicMock
-from dt_ai.ai import analyze_image, is_gemini_cli_available
+from dt_ai.ai import analyze_image, is_gemini_cli_available, parse_ai_response
 import os
 
 def test_is_gemini_cli_available():
@@ -46,5 +46,10 @@ def test_aesthetic_prompt_content():
     assert len(AESTHETIC_PROMPT) > 100
     assert "Darktable" in AESTHETIC_PROMPT
     assert "Wildlife" in AESTHETIC_PROMPT
-    assert "Landscape" in AESTHETIC_PROMPT
-    assert "Denoise (profiled)" in AESTHETIC_PROMPT
+    assert "JSON" in AESTHETIC_PROMPT
+    assert "natural" in AESTHETIC_PROMPT
+
+def test_parse_ai_response_valid():
+    text = "```json\n{\"test\": 1}\n```"
+    result = parse_ai_response(text)
+    assert result["test"] == 1
