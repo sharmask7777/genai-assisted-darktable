@@ -8,23 +8,24 @@ def test_audit_dry_run(tmp_path):
     f.write_text("dummy")
     
     runner = CliRunner()
-    # Mock extraction and AI to avoid calling sips and gemini
-    with patch("dt_ai.main.extract_preview") as mock_extract,          patch("dt_ai.main.analyze_image") as mock_analyze:
+    # Mock extraction and AI
+    with patch("dt_ai.main.extract_preview") as mock_extract,          patch("dt_ai.main.analyze_image") as mock_analyze,          patch("dt_ai.main.parse_ai_response") as mock_parse:
         
         mock_extract.return_value = "dummy.jpg"
-        mock_analyze.return_value = "Aesthetic Audit Text"
+        mock_analyze.return_value = "raw text"
+        mock_parse.return_value = {"audit": "AI Audit Content", "recommendations": []}
         
         result = runner.invoke(cli, ['audit', str(f), '--dry-run'])
     
     assert result.exit_code == 0
     assert "DRY-RUN mode" in result.output
     assert "Discovered 1 RAW file(s)" in result.output
-    assert "Extracting preview" in result.output
+    assert "Extracted preview:" in result.output
     assert "Audit report saved" in result.output
     
     audit_file = tmp_path / "test_audit.md"
     assert audit_file.exists()
-    assert audit_file.read_text() == "Aesthetic Audit Text"
+    assert audit_file.read_text() == "AI Audit Content"
 
 def test_audit_resilience(tmp_path):
     f1 = tmp_path / "good.ARW"
@@ -33,7 +34,7 @@ def test_audit_resilience(tmp_path):
     f2.write_text("d2")
     
     runner = CliRunner()
-    with patch("dt_ai.main.extract_preview") as mock_extract,          patch("dt_ai.main.analyze_image") as mock_analyze:
+    with patch("dt_ai.main.extract_preview") as mock_extract,          patch("dt_ai.main.analyze_image") as mock_analyze,          patch("dt_ai.main.parse_ai_response") as mock_parse:
         
         # Fail extraction on bad.ARW
         def side_effect(path, output_path=None):
@@ -43,6 +44,7 @@ def test_audit_resilience(tmp_path):
         
         mock_extract.side_effect = side_effect
         mock_analyze.return_value = "Good Audit"
+        mock_parse.return_value = {"audit": "Good Audit", "recommendations": []}
         
         result = runner.invoke(cli, ['audit', str(tmp_path)])
     
