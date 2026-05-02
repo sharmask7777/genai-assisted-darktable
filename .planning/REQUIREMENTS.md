@@ -37,12 +37,12 @@
 |-------------|-------|--------|
 | CORE-01 | Phase 1 | Pending |
 | CORE-02 | Phase 1 | Pending |
-| CORE-03 | Phase 1 | Pending |
-| CORE-04 | Phase 1 | Pending |
+| CORE-03 | Phase 3 | Pending |
+| CORE-04 | Phase 3 | Pending |
 | CROP-01 | Phase 2 | Pending |
 | CROP-02 | Phase 2 | Pending |
 | CROP-03 | Phase 2 | Pending |
 | MOD-01 | Phase 3 | Pending |
 | MOD-02 | Phase 3 | Pending |
-| KB-01 | Phase 3 | Pending |
-| KB-02 | Phase 3 | Pending |
+| KB-01 | Phase 4 | Pending |
+| KB-02 | Phase 4 | Pending |
