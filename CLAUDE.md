@@ -1,15 +1,28 @@
-# GSD Workflow: Darktable GenAI Assistant
+# CLAUDE.md - Darktable GenAI Assistant (Enhanced)
 
-## Current Context
-Building a macOS CLI for GenAI-driven photo editing in Darktable.
+## Project Context
+This project enhances the `dt-ai` assistant with intelligent cropping and advanced Darktable module support (`diffuse or sharpen`).
 
-## Workflow Commands
-- `/gsd:progress` - Check current project state
-- `/gsd:discuss-phase [N]` - Clarify approach for a phase
-- `/gsd:plan-phase [N]` - Generate implementation plans
-- `/gsd:execute-phase [N]` - Execute plans
+## GSD Workflow Instructions
+This project follows the GSD (Get Shit Done) workflow.
+- **Planning**: `.planning/` directory contains the roadmap and requirements.
+- **Execution**: Run `/gsd:plan-phase 1` to begin the first phase.
+- **Guidelines**: Use the `gsd-*` agents for research, planning, and execution.
 
-## Project Guidelines
-- **Frugal Token Usage:** Always use downscaled previews for Vision.
-- **Interactivity:** Pause for user validation on complex module injections (Denoise).
-- **Non-Destructive:** Only modify .xmp sidecar files, never RAW originals.
+## Directory Map
+- `dt_ai/`: Core logic.
+- `tests/`: Test suite.
+- `.planning/`: Project memory and roadmap.
+- `.agents/`: AI-specific summaries and internal docs.
+
+## Tech Stack
+- **Python 3.12+**
+- **Click** (CLI)
+- **Gemini 2.0** (Vision & Reasoning)
+- **macOS sips** (Preview extraction)
+- **Darktable** (XMP injection)
+
+## Build & Test
+- Install dependencies: `uv sync`
+- Run tests: `uv run pytest`
+- Run CLI: `uv run dt-ai`
