@@ -1,53 +1,42 @@
 # Project: Darktable GenAI Assistant (Enhanced Editing & Cropping)
 
 ## What This Is
-An enhancement to the existing Darktable GenAI Assistant (`dt-ai`). This project adds a preliminary intelligent cropping step (generating three distinct crop suggestions for user selection before further edits) and expands the AI's editing repertoire to include advanced Darktable modules like `diffuse or sharpen` for noise reduction, deblurring, and sharpening. It also enriches the underlying knowledge base with expert research on how and when to apply these advanced tools.
+An enhancement to the existing `dt-ai` tool and its associated `genai-assisted-darktable` skill. This project introduces a two-stage editing workflow: first, an intelligent cropping phase for compositional refinement, followed by advanced aesthetic edits leveraging Darktable's professional `diffuse or sharpen` module for noise, deblur, and detail management.
 
 ## Core Value
-To provide photographers with intelligent, AI-driven composition (cropping) options *before* aesthetic edits, and to leverage Darktable's most advanced scene-referred modules (`diffuse or sharpen`) for professional-grade detail and noise management.
+To elevate the `dt-ai` mentorship experience from basic exposure/color correction to professional-grade composition and detail management, ensuring photographers have high-quality, scene-referred starting points for every image.
 
 ## Context
-- **Codebase:** Existing `dt-ai` Click CLI application in Python.
-- **Workflow:** The current flow goes straight to aesthetic edits; this introduces a two-stage flow (Crop Selection -> Aesthetic Edits).
-- **Domain:** Professional photography editing using Darktable's scene-referred workflow.
+- **Base Interface:** `genai-assisted-darktable` skill in `.gemini/skills/`.
+- **Backend:** `dt-ai` Python application (Click-based).
+- **Target App:** Darktable (Scene-referred AgX pipeline).
 
 ## Requirements
 
-### Validated
-- ✓ **FS-01**: Discover RAW files and manage `.dt-ai-state.json` sessions.
-- ✓ **PREV-01**: Extract previews using macOS `sips`.
-- ✓ **AI-01**: Generate multiple aesthetic variations (exposure, color calibration) using Gemini.
-- ✓ **XMP-01**: Safely duplicate and inject parameters into Darktable XMP sidecar files.
+### Validated (Already Built)
+- ✓ **CORE-01**: RAW discovery and session initialization (`init-session`).
+- ✓ **CORE-02**: Preview extraction using macOS `sips` (`agent-next`).
+- ✓ **CORE-03**: Basic XMP injection for Exposure, Temperature, Sigmoid, and AgX.
+- ✓ **SKILL-01**: Initial "Mentorship" persona and step-by-step guidance.
 
-### Active
-- [ ] **CROP-01**: Analyze the original image's composition and generate up to three distinct crop suggestions (if the original composition can be improved).
-- [ ] **CROP-02**: Present the crop options to the user and require selection before proceeding to the aesthetic editing phase.
-- [ ] **MOD-01**: Integrate the `diffuse or sharpen` module into the XMP generation engine to support noise reduction, deblurring, and sharpening.
-- [ ] **KB-01**: Research best practices for Darktable's advanced detail modules (`diffuse or sharpen`, denoise) and encode these rules into the AI's system prompt or research database.
+### Active (New Enhancements)
+- [ ] **CROP-01**: Update `agent-next` to include composition analysis and coordinate suggestions for 3 distinct crops.
+- [ ] **CROP-02**: Update `SKILL.md` and `apply-variations` to support a two-stage selection flow: User selects a crop before aesthetic edits are applied.
+- [ ] **MOD-01**: Implement `diffuse or sharpen` module support in `xmp.py` with binary C-struct parameter packing.
+- [ ] **KB-01**: Research best practices for `diffuse or sharpen` (noise vs. deblur vs. sharpen) and integrate into the AI system prompt.
 
 ### Out of Scope
-- **GUI-01**: Building a full graphical interface for crop selection (will rely on Darktable or existing workflows to review and choose).
+- **GUI-01**: Custom cropping interface (relying on CLI selection and Darktable preview).
+- **LOC-01**: Local vision models (continuing with Gemini Cloud APIs).
 
 ## Key Decisions
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Two-Stage Flow | Cropping fundamentally changes the composition, which might affect the AI's aesthetic analysis. Therefore, cropping must precede other edits. | Pending |
+| Two-Stage Flow | Cropping affects subsequent aesthetic analysis (e.g., exposure weighting). Must be selected first. | Pending |
+| Binary Structs | `diffuse or sharpen` params are complex C-structs; requires precise `struct.pack` implementation. | Pending |
 
 ## Evolution
 This document evolves at phase transitions and milestone boundaries.
-
-**After each phase transition** (via `/gsd-transition`):
-1. Requirements invalidated? → Move to Out of Scope with reason
-2. Requirements validated? → Move to Validated with phase reference
-3. New requirements emerged? → Add to Active
-4. Decisions to log? → Add to Key Decisions
-5. "What This Is" still accurate? → Update if drifted
-
-**After each milestone** (via `/gsd:complete-milestone`):
-1. Full review of all sections
-2. Core Value check — still the right priority?
-3. Audit Out of Scope — reasons still valid?
-4. Update Context with current state
 
 ---
 *Last updated: 2026-05-02 after initialization*
