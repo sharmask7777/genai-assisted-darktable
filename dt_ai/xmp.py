@@ -369,17 +369,28 @@ def generate_crop_previews(raw_path: str, crop_suggestions: dict) -> List[str]:
             root = generate_skeleton()
             
         # 1. Apply Clipping (Crop)
+        # For the 'clipping' module v5, cx/cy are Top-Left coordinates.
+        # AI provides center (cx, cy), so we convert to top-left (left, top).
+        cw = max(0.0, min(1.0, params.get("cw", 1.0)))
+        ch = max(0.0, min(1.0, params.get("ch", 1.0)))
+        left = max(0.0, min(1.0 - cw, params.get("cx", 0.5) - cw/2))
+        top = max(0.0, min(1.0 - ch, params.get("cy", 0.5) - ch/2))
+
         clip_hex = get_clipping_params(
-            cx=params.get("cx", 0.5),
-            cy=params.get("cy", 0.5),
-            cw=params.get("cw", 1.0),
-            ch=params.get("ch", 1.0)
+            cx=left,
+            cy=top,
+            cw=cw,
+            ch=ch
         )
         add_history_item(root, "clipping", clip_hex, "5")
         
         # 2. Apply Ashift (Rotation)
+        # Ensure rotation is within reasonable bounds
+        rot_val = params.get("rotation", 0.0)
+        if abs(rot_val) > 180: rot_val = 0.0
+        
         ashift_hex = get_ashift_params(
-            rotation=params.get("rotation", 0.0)
+            rotation=rot_val
         )
         add_history_item(root, "ashift", ashift_hex, "5")
         
