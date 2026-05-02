@@ -51,17 +51,14 @@ def test_crop_coordinate_conversion(tmp_path):
     assert clipping_item is not None
     params_hex = clipping_item.get("{http://darktable.sf.net/}params")
     data = bytes.fromhex(params_hex)
-    angle, left, top, cw, ch = struct.unpack('<fffff', data[:20])
+    angle, cx, cy, cw, ch = struct.unpack('<fffff', data[:20])
     
-    assert left == pytest.approx(0.25)
-    assert top == pytest.approx(0.25)
+    assert cx == pytest.approx(0.5)
+    assert cy == pytest.approx(0.5)
     assert cw == pytest.approx(0.5)
     assert ch == pytest.approx(0.5)
 
     # Verify Version 02 (Edge Case: cx=0.1, cy=0.1, cw=0.4, ch=0.4)
-    # left = max(0, 0.1 - 0.2) = 0.0
-    # top = max(0, 0.1 - 0.2) = 0.0
-    # width = 0.4
     xmp_v2 = tmp_path / "test_math_02.ARW.xmp"
     root = ET.parse(xmp_v2)
     history = root.find(".//{http://darktable.sf.net/}history/{http://www.w3.org/1999/02/22-rdf-syntax-ns#}Seq")
@@ -73,9 +70,9 @@ def test_crop_coordinate_conversion(tmp_path):
             
     params_hex = clipping_item.get("{http://darktable.sf.net/}params")
     data = bytes.fromhex(params_hex)
-    angle, left, top, cw, ch = struct.unpack('<fffff', data[:20])
+    angle, cx, cy, cw, ch = struct.unpack('<fffff', data[:20])
     
-    assert left == 0.0
-    assert top == 0.0
+    assert cx == pytest.approx(0.1)
+    assert cy == pytest.approx(0.1)
     assert cw == pytest.approx(0.4)
     assert ch == pytest.approx(0.4)
