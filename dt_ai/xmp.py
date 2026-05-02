@@ -369,11 +369,21 @@ def generate_crop_previews(raw_path: str, crop_suggestions: dict) -> List[str]:
             root = generate_skeleton()
             
         # 1. Apply Clipping (Crop)
+        # Convert center (cx, cy) to top-left (left, top)
+        cw = params.get("cw", 1.0)
+        ch = params.get("ch", 1.0)
+        left = max(0.0, min(1.0, params.get("cx", 0.5) - cw/2))
+        top = max(0.0, min(1.0, params.get("cy", 0.5) - ch/2))
+        
+        # Ensure width/height don't push us out of bounds
+        if left + cw > 1.0: cw = 1.0 - left
+        if top + ch > 1.0: ch = 1.0 - top
+
         clip_hex = get_clipping_params(
-            cx=params.get("cx", 0.0),
-            cy=params.get("cy", 0.0),
-            cw=params.get("cw", 1.0),
-            ch=params.get("ch", 1.0)
+            cx=left,
+            cy=top,
+            cw=cw,
+            ch=ch
         )
         add_history_item(root, "clipping", clip_hex, "5")
         
