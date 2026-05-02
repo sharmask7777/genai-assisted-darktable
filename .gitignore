@@ -6,5 +6,4 @@ __pycache__/
 # Ignore gemini cli state
 .gemini
 .parity-sync-20260501_173113
-.planning
 strands-skills
