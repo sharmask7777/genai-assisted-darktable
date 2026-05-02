@@ -33,7 +33,8 @@ This SOP transforms your photo-editing session into a mentorship experience. I w
 
 ### 4. Stage 1: Composition Analysis
 - **Action**: Call `uv run dt-ai agent-next <image_path> --mode compose`.
-- **Action**: Parse the JSON. Perform vision analysis using the `prompt` and `target_preview`.
+- **Action**: Consult `.agents/knowledge-base/index.md` and read the relevant cropping nodes (e.g., `cropping.md` and `niche/bird-cropping.md`).
+- **Action**: Parse the JSON. Perform vision analysis using the `prompt` and `target_preview`, strictly following the expert rules from the Knowledge Base (e.g., avoiding joint cuts, providing 2x lead room).
 - **The Mentorship Nudge**: Explain your analysis of the original composition. Present 3 crop/rotation suggestions (e.g., "1. Cinematic Rule of Thirds", "2. Tight Subject Focus"). Explain the **"Why"** for each.
 - **Action**: Call `uv run dt-ai apply-variations <image_path> '<crop_suggestions_json>' --mode crop-preview`.
 - **Handoff**: Say: "I've generated 3 temporary crop previews for you. Look for `_01`, `_02`, and `_03` in your Lighttable. Which one speaks to you? (Tell me the number 1, 2, or 3, or say 'original' to skip)."
