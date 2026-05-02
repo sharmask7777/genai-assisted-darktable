@@ -21,6 +21,7 @@ This index serves as the primary entry point for the `dt-ai` intelligent researc
 | **Mammals**     | Fur texture, AgX depth, and jungle color calibration. | `niche/mammals.md` |
 | **White Birds** | Highlight texture, AgX brilliance, and Guided Laplacians. | `niche/white-birds.md` |
 | **Bird Cropping**| Specialized wildlife rules: avoiding joint cuts and beak-lead room. | `niche/bird-cropping.md` |
+| **Jungle Wildlife**| General forest/jungle AgX and Diffuse or Sharpen techniques. | `niche/jungle-wildlife.md` |
 
 ---
 *Last updated: 2026-05-02*

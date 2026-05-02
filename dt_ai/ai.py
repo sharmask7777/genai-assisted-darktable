@@ -16,6 +16,8 @@ Include **Rotation** for leveling horizons or adding creative tilt (especially f
 ### 3. Output Parameters (JSON)
 You MUST provide the suggestions in a JSON code block at the end.
 Coordinates (`cx`, `cy`, `cw`, `ch`) must be **normalized floats (0.0 to 1.0)**.
+`cx` and `cy` are the **CENTER** of the crop area.
+`cw` and `ch` are the **WIDTH** and **HEIGHT** of the crop area.
 Rotation is in **degrees** (±180).
 
 Required JSON format:

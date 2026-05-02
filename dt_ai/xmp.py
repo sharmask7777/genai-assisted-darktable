@@ -393,27 +393,22 @@ def generate_crop_previews(raw_path: str, crop_suggestions: dict, metadata: dict
         else:
             root = generate_skeleton()
             
-        # 1. Apply Crop (Using the 'crop' v3 module found in user's XMP)
+        # 1. Apply Crop (Using the stable 16-byte 'crop' v3 module)
         ai_cx = params.get("cx", 0.5)
         ai_cy = params.get("cy", 0.5)
         ai_cw = params.get("cw", 1.0)
         ai_ch = params.get("ch", 1.0)
 
+        # Convert center/dimensions to top-left/dimensions
         left = max(0.0, min(1.0, ai_cx - ai_cw/2))
         top = max(0.0, min(1.0, ai_cy - ai_ch/2))
-        right = max(left + 0.01, min(1.0, ai_cx + ai_cw/2))
-        bottom = max(top + 0.01, min(1.0, ai_cy + ai_ch/2))
+        width = min(ai_cw, 1.0 - left)
+        height = min(ai_ch, 1.0 - top)
 
-        crop_hex = get_crop_params(left, top, right, bottom)
+        crop_hex = get_crop_params(left, top, width, height)
         add_history_item(root, "crop", crop_hex, "3")
         
-        # 2. Apply Ashift (Rotation)
-        rot_val = params.get("rotation", 0.0)
-        # Only apply if rotation is non-zero (intelligent rotation)
-        if abs(rot_val) > 0.001:
-            if abs(rot_val) > 180: rot_val = 0.0
-            ashift_hex = get_ashift_params(rotation=rot_val, focal_length=focal, crop_factor=crop_factor)
-            add_history_item(root, "ashift", ashift_hex, "5")
+        # 2. Ashift (Rotation) is COMPLETELY REMOVED to prevent UI errors
         
         write_xmp(root, target_path)
         generated.append(target_path)
