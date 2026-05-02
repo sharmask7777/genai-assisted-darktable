@@ -109,7 +109,7 @@ This report identifies gaps between the current `dt-ai` implementation and lates
 ## 2. Gap Analysis Table
 | Category | Current State | Industry Standard | Priority |
 |----------|---------------|-------------------|----------|
-| **Prompts** | { "Present" if internal_data['prompts'] else "Missing" } | 2026 Mentorship Style | Medium |
+| **Prompts** | { "Present" if internal_data['prompts'] else "Missing" } | Latest Mentorship Style | Medium |
 | **Exposure** | Version { internal_data['xmp_modules'].get('exposure', {}).get('version', 'Unknown') } | Latest (v6+) | Low |
 | **Color/Tone** | Filmic/Standard | AgX / Scene-Referred | High |
 

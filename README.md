@@ -16,7 +16,7 @@ If you don't know how to use GitHub, follow these 3 simple steps to get started:
 
 ---
 
-## 🚀 What's New in 2026
+## 🚀 What's New in Latest Edition
 
 - **Intelligent Cropping Selection**: Gemini suggests 3 expert crops (including rotation) for you to preview in Darktable before committing to aesthetic edits.
 - **Advanced Detail Management**: Automated support for the `diffuse or sharpen` module for surgical deblurring and noise reduction.
@@ -36,7 +36,7 @@ If you don't know how to use GitHub, follow these 3 simple steps to get started:
 
 ---
 
-## 🛠 Advanced Features (2026 Edition)
+## 🛠 Advanced Features (Latest Edition)
 - **AgX-First Workflow**: We prioritize the modern `AgX` tone mapper over legacy modules, ensuring your colors stay natural even in high-contrast highlights.
 - **Hardware-Aware**: The system includes a sensor-correction database (e.g., Canon R7 high-ISO noise handling, Sony black-level offsets).
 - **Troubleshooting**: If an image appears black, it's usually a `sigmoid` or `agx` version mismatch. Our `SKILL.md` contains a recovery guide for these rare schema updates.

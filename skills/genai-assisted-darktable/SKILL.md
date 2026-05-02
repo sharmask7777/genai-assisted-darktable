@@ -50,7 +50,7 @@ This SOP transforms your photo-editing session into a mentorship experience. I w
     - Consult `.agents/knowledge-base/index.md` to identify the relevant research branch (e.g., Wildlife, Landscape).
     - Read ONLY the relevant leaf node (e.g., `wildlife.md`).
 - **Aesthetic Research (Deep)**: 
-    - If the user chose "Deep Research", use your available search tools to look up creative tutorials for the specific subject (e.g., "best practices for editing raptors in darktable 2026").
+    - If the user chose "Deep Research", use your available search tools to look up creative tutorials for the specific subject (e.g., "best practices for editing raptors in latest darktable").
     - **Continuous Learning**: 
         1. Synthesize your findings into a professional, concise summary.
         2. Identify the correct niche for this information (e.g., `niche/raptors.md`).

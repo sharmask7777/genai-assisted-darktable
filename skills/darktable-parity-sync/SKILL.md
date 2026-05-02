@@ -30,7 +30,7 @@ Conduct research using web search, official Darktable blogs, and the primary Git
 - New modules (e.g., AgX, Capture Sharpness).
 - Current version numbers and binary structure changes for `clipping`, `ashift` (Rotate and Perspective), and `diffuse or sharpen`.
 - Updates to "Rotate and Perspective" (ashift) math, specifically how focal length and crop factor influence the homography matrix.
-- Industry best practices for RAW editing in 2026, including intelligent auto-crop logic.
+- Industry best practices for RAW editing in latest versions, including intelligent auto-crop logic.
 
 ### 3. Parity Audit & Gap Analysis
 Generate a structured `REPORT.md` in the progress directory:
