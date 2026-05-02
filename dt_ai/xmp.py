@@ -369,18 +369,23 @@ def generate_crop_previews(raw_path: str, crop_suggestions: dict) -> List[str]:
             root = generate_skeleton()
             
         # 1. Apply Clipping (Crop)
-        # For the 'clipping' module v5, cx/cy are Top-Left coordinates.
-        # AI provides center (cx, cy), so we convert to top-left (left, top).
-        cw = max(0.0, min(1.0, params.get("cw", 1.0)))
-        ch = max(0.0, min(1.0, params.get("ch", 1.0)))
-        left = max(0.0, min(1.0 - cw, params.get("cx", 0.5) - cw/2))
-        top = max(0.0, min(1.0 - ch, params.get("cy", 0.5) - ch/2))
+        # For the 'clipping' module v5:
+        # cx = Left, cy = Top, cw = Right, ch = Bottom (all 0.0 to 1.0)
+        ai_cx = params.get("cx", 0.5)
+        ai_cy = params.get("cy", 0.5)
+        ai_cw = params.get("cw", 1.0)
+        ai_ch = params.get("ch", 1.0)
+
+        left = max(0.0, min(1.0, ai_cx - ai_cw/2))
+        top = max(0.0, min(1.0, ai_cy - ai_ch/2))
+        right = max(left + 0.01, min(1.0, ai_cx + ai_cw/2))
+        bottom = max(top + 0.01, min(1.0, ai_cy + ai_ch/2))
 
         clip_hex = get_clipping_params(
             cx=left,
             cy=top,
-            cw=cw,
-            ch=ch
+            cw=right,
+            ch=bottom
         )
         add_history_item(root, "clipping", clip_hex, "5")
         
@@ -414,11 +419,17 @@ def promote_variation(raw_path: str, version_id: int, cleanup: bool = True):
     shutil.copy2(source_xmp, target_xmp)
     
     if cleanup:
-        # Cleanup all versioned sidecars from 01 to 99
-        for i in range(1, 100):
-            p = get_crop_preview_path(raw_path, i)
-            if os.path.exists(p):
-                os.remove(p)
+        # Aggressively cleanup all versioned sidecars using glob
+        import glob
+        base, ext = os.path.splitext(raw_path)
+        # Patterns like image_NN.ext.xmp or image_NN.xmp
+        patterns = [f"{base}_[0-9][0-9]{ext}.xmp", f"{base}_[0-9][0-9].xmp"]
+        for pattern in patterns:
+            for p in glob.glob(pattern):
+                try:
+                    os.remove(p)
+                except Exception:
+                    pass
 
 def generate_variations(raw_path: str, ai_result: dict, metadata: dict = None) -> List[str]:
     """Generates Darktable version sidecars based on all AI variations provided."""
