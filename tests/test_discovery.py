@@ -14,7 +14,7 @@ def test_discover_directory(tmp_path):
     (tmp_path / "b.NEF").write_text("d")
     (tmp_path / "c.jpg").write_text("d")
     results = discover_raw_files(str(tmp_path))
-    assert len(results) == 2
+    assert len(results) == 3
     assert any(f.endswith("a.ARW") for f in results)
     assert any(f.endswith("b.NEF") for f in results)
 

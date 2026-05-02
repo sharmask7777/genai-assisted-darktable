@@ -4,7 +4,7 @@ import json
 from dt_ai.discovery import discover_raw_files, get_neighboring_files, get_raw_metadata
 from dt_ai.processor import extract_preview
 from dt_ai.ai import AESTHETIC_PROMPT, parse_ai_response, synthesize_nudge, get_composition_prompt, get_aesthetic_prompt
-from dt_ai.xmp import generate_variations, generate_crop_previews
+from dt_ai.xmp import generate_variations, generate_crop_previews, promote_variation
 from dt_ai.gui import open_in_darktable
 from dt_ai.state import load_state, save_state, get_state_path
 from dt_ai.research import get_subject_tips
@@ -117,6 +117,19 @@ def init_session(path):
         click.echo(f"Resuming existing session for: {path}")
     else:
         click.echo(f"Started new session for: {path}")
+
+@cli.command(name='promote-variation')
+@click.argument('image_path', type=click.Path(exists=True))
+@click.argument('version_id', type=int)
+def promote_variation_cmd(image_path, version_id):
+    """Internal command: promotes a versioned sidecar to the base sidecar."""
+    abs_path = os.path.abspath(image_path)
+    try:
+        promote_variation(abs_path, version_id)
+        click.echo(f"Successfully promoted version {version_id} to base.")
+    except Exception as e:
+        click.echo(f"Error: {str(e)}", err=True)
+        exit(1)
 
 @cli.command()
 @click.argument('image_path', type=click.Path(exists=True))

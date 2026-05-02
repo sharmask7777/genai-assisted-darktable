@@ -343,9 +343,10 @@ def add_history_item(root: ET.Element, operation: str, params: str, modversion: 
     sync_history_end(root)
 
 def get_crop_preview_path(raw_path: str, crop_id: int) -> str:
-    """Returns the path for a temporary crop preview sidecar."""
+    """Returns the path for a temporary crop preview sidecar using standard Darktable versioning."""
     base, ext = os.path.splitext(raw_path)
-    return f"{base}_crop{crop_id}{ext}.xmp"
+    # Use 2-digit padding for Darktable versioning (e.g., image_01.jpg.xmp)
+    return f"{base}_{crop_id:02d}{ext}.xmp"
 
 def generate_crop_previews(raw_path: str, crop_suggestions: dict) -> List[str]:
     """Generates temporary XMP sidecars for each crop suggestion."""
@@ -386,6 +387,27 @@ def generate_crop_previews(raw_path: str, crop_suggestions: dict) -> List[str]:
         generated.append(target_path)
         
     return generated
+
+def promote_variation(raw_path: str, version_id: int, cleanup: bool = True):
+    """
+    Promotes a specific versioned sidecar (e.g., _01.xmp) to the primary base sidecar (.xmp).
+    """
+    source_xmp = get_crop_preview_path(raw_path, version_id)
+    target_xmp = f"{raw_path}.xmp"
+    
+    if not os.path.exists(source_xmp):
+        raise FileNotFoundError(f"Source sidecar {source_xmp} not found.")
+        
+    # Copy source to target
+    import shutil
+    shutil.copy2(source_xmp, target_xmp)
+    
+    if cleanup:
+        # Cleanup all versioned sidecars from 01 to 99
+        for i in range(1, 100):
+            p = get_crop_preview_path(raw_path, i)
+            if os.path.exists(p):
+                os.remove(p)
 
 def generate_variations(raw_path: str, ai_result: dict, metadata: dict = None) -> List[str]:
     """Generates Darktable version sidecars based on all AI variations provided."""

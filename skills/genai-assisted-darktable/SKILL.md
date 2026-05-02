@@ -22,6 +22,7 @@ This SOP transforms your photo-editing session into a mentorship experience. I w
 ### 1. Project Initialization
 - **Action**: Ask the user: "Welcome! What is the directory for the images we're working on today?"
 - **Action**: Once provided, call `uv run dt-ai init-session <image_dir>`.
+- **Environment Scan**: Perform a quick scan of your available tools to identify your research capabilities (e.g., check for `google_web_search`, `web_fetch`, or `duckduckgo_search`). Note these for later.
 
 ### 2. Darktable Setup Guidance
 - **Guidance**: Instruct the user to open **Darktable** and import the `image_dir`.
@@ -35,12 +36,25 @@ This SOP transforms your photo-editing session into a mentorship experience. I w
 - **Action**: Parse the JSON. Perform vision analysis using the `prompt` and `target_preview`.
 - **The Mentorship Nudge**: Explain your analysis of the original composition. Present 3 crop/rotation suggestions (e.g., "1. Cinematic Rule of Thirds", "2. Tight Subject Focus"). Explain the **"Why"** for each.
 - **Action**: Call `uv run dt-ai apply-variations <image_path> '<crop_suggestions_json>' --mode crop-preview`.
-- **Handoff**: Say: "I've generated 3 temporary crop previews for you. Look for `_crop1`, `_crop2`, and `_crop3` in your Lighttable. Which one speaks to you? (Tell me the number 1, 2, or 3, or say 'original' to skip)."
-- **Constraint**: You MUST pause here. Once selected, inform the user you are moving to aesthetic edits.
+- **Handoff**: Say: "I've generated 3 temporary crop previews for you. Look for `_01`, `_02`, and `_03` in your Lighttable. Which one speaks to you? (Tell me the number 1, 2, or 3, or say 'original' to skip)."
+- **Action**: Once the user selects a number (e.g., "1"), call `uv run dt-ai promote-variation <image_path> <selected_number>`. This will set the chosen crop as the base for all future edits and clean up the extra preview files.
+- **Constraint**: You MUST pause here and wait for the selection. Once promoted, inform the user you are moving to aesthetic edits.
 
 ### 5. Stage 2: Aesthetic Mentorship
 - **Action**: Call `uv run dt-ai agent-next <image_path> --mode aesthetic --crop-rationale "<rationale_from_selected_crop>"`.
-- **Aesthetic Research**: Use the `google_web_search` tool to look up creative tutorials for the specific subject (e.g., "best practices for editing raptors in darktable 2026").
+- **Research Depth Choice**: 
+    - Ask the user: "I'm ready to research the best aesthetic for this image. Should I do a **Shallow Research** (consult my local expert Knowledge Base) or **Deep Research** (search the internet for new creative ideas)?"
+    - Wait for the user's choice.
+- **KB Traversal (Shallow/Base)**: 
+    - Consult `.agents/knowledge-base/index.md` to identify the relevant research branch (e.g., Wildlife, Landscape).
+    - Read ONLY the relevant leaf node (e.g., `wildlife.md`).
+- **Aesthetic Research (Deep)**: 
+    - If the user chose "Deep Research", use your available search tools to look up creative tutorials for the specific subject (e.g., "best practices for editing raptors in darktable 2026").
+    - **Continuous Learning**: 
+        1. Synthesize your findings into a professional, concise summary.
+        2. Identify the correct niche for this information (e.g., `niche/raptors.md`).
+        3. Use `write_file` to create or update that leaf node in `.agents/knowledge-base/`.
+        4. Update `.agents/knowledge-base/index.md` to include this new niche node if it didn't exist.
 - **Vision Analysis**: Suggest 3 variations (Natural, Dramatic, Pro Research).
 - **The Mentorship Nudge**: 
     - Provide a **Professional Rationale** for each choice.

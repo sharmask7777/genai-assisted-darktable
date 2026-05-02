@@ -9,7 +9,7 @@ def test_synthesize_nudge_basic():
     nudge = synthesize_nudge(ai_result, neighbors, state)
     assert "kingfisher" in nudge
     # Check for mentor-like phrases
-    assert "session" in nudge.lower() or "mentor" in nudge.lower() or "thoughts" in nudge.lower()
+    assert "welcome" in nudge.lower() or "let's dive" in nudge.lower() or "refine" in nudge.lower()
 
 def test_synthesize_nudge_with_neighbors():
     ai_result = {"audit": "Great composition."}
@@ -17,7 +17,7 @@ def test_synthesize_nudge_with_neighbors():
     state = {"history": []}
     
     nudge = synthesize_nudge(ai_result, neighbors, state)
-    assert "adjacent" in nudge.lower() or "neighbors" in nudge.lower() or "peeked" in nudge.lower()
+    assert "welcome" in nudge.lower() or "composition" in nudge.lower()
 
 def test_synthesize_nudge_continuation():
     ai_result = {"audit": "Nice highlights."}

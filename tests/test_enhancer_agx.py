@@ -63,13 +63,16 @@ def test_get_sigmoid_params():
     from dt_ai.xmp import get_sigmoid_params
     import struct
     hex_str = get_sigmoid_params(contrast=1.6, skew=0.1)
-    # contrast(f), skew(f), black(f), white(f), hue(i), atten(3f), rot(3f)
-    # 4 + 4 + 4 + 4 + 4 + 12 + 12 = 44 bytes = 88 hex chars
-    assert len(hex_str) == 88
+    # middle_grey_contrast (float), contrast_skewness (float),
+    # display_white_target (float), display_black_target (float),
+    # color_processing (int), preserve_hue (float), base_primaries (int),
+    # primary_attenuation (float[3]), primary_rotation (float[3]), primary_purity (float)
+    # Total: 14 fields * 4 bytes = 56 bytes = 112 hex chars
+    assert len(hex_str) == 112
     
     data = bytes.fromhex(hex_str)
     # Using struct.calcsize to verify
-    assert len(data) == struct.calcsize('<ffffi3f3f')
+    assert len(data) == struct.calcsize('<ffffif i3f3f f')
 
 def test_get_sigmoid_params_custom_rotations():
     """Verify sigmoid primary rotations are correctly packed."""
@@ -80,12 +83,15 @@ def test_get_sigmoid_params_custom_rotations():
     hex_str = get_sigmoid_params(attenuation=atten, rotation=rot)
     
     data = bytes.fromhex(hex_str)
-    # contrast(f), skew(f), black(f), white(f), hue(i), atten(3f), rot(3f)
-    unpacked = struct.unpack('<ffffi3f3f', data)
+    # middle_grey_contrast (float), contrast_skewness (float),
+    # display_white_target (float), display_black_target (float),
+    # color_processing (int), preserve_hue (float), base_primaries (int),
+    # primary_attenuation (float[3]), primary_rotation (float[3]), primary_purity (float)
+    unpacked = struct.unpack('<ffffif i3f3f f', data)
     
-    # Check attenuation (indices 5, 6, 7)
-    assert unpacked[5] == pytest.approx(0.2)
-    # Check rotation (indices 8, 9, 10)
-    assert unpacked[8] == pytest.approx(0.01)
-    assert unpacked[9] == pytest.approx(-0.02)
-    assert unpacked[10] == pytest.approx(0.03)
+    # Check attenuation (indices 7, 8, 9)
+    assert unpacked[7] == pytest.approx(0.2)
+    # Check rotation (indices 10, 11, 12)
+    assert unpacked[10] == pytest.approx(0.01)
+    assert unpacked[11] == pytest.approx(-0.02)
+    assert unpacked[12] == pytest.approx(0.03)

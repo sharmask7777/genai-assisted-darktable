@@ -31,5 +31,5 @@ def test_apply_variations_crop_preview(tmp_path):
     assert result.exit_code == 0
     output = json.loads(result.output)
     assert len(output["versions"]) == 2
-    assert os.path.exists(tmp_path / "test_crop1.ARW.xmp")
-    assert os.path.exists(tmp_path / "test_crop2.ARW.xmp")
+    assert os.path.exists(tmp_path / "test_01.ARW.xmp")
+    assert os.path.exists(tmp_path / "test_02.ARW.xmp")
