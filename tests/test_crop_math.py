@@ -41,18 +41,18 @@ def test_crop_coordinate_conversion(tmp_path):
     assert xmp_v1.exists()
     
     root = ET.parse(xmp_v1)
-    # Find the clipping params
+    # Find the crop params
     history = root.find(".//{http://darktable.sf.net/}history/{http://www.w3.org/1999/02/22-rdf-syntax-ns#}Seq")
-    clipping_item = None
+    crop_item = None
     for li in history:
-        if li.get("{http://darktable.sf.net/}operation") == "clipping":
-            clipping_item = li
+        if li.get("{http://darktable.sf.net/}operation") == "crop":
+            crop_item = li
             break
             
-    assert clipping_item is not None
-    params_hex = clipping_item.get("{http://darktable.sf.net/}params")
+    assert crop_item is not None
+    params_hex = crop_item.get("{http://darktable.sf.net/}params")
     data = bytes.fromhex(params_hex)
-    angle, left, top, right, bottom = struct.unpack('<fffff', data[:20])
+    left, top, right, bottom = struct.unpack('<ffff', data[:16])
     
     assert left == pytest.approx(0.25)
     assert top == pytest.approx(0.25)
@@ -67,15 +67,15 @@ def test_crop_coordinate_conversion(tmp_path):
     xmp_v2 = tmp_path / "test_math_02.ARW.xmp"
     root = ET.parse(xmp_v2)
     history = root.find(".//{http://darktable.sf.net/}history/{http://www.w3.org/1999/02/22-rdf-syntax-ns#}Seq")
-    clipping_item = None
+    crop_item = None
     for li in history:
-        if li.get("{http://darktable.sf.net/}operation") == "clipping":
-            clipping_item = li
+        if li.get("{http://darktable.sf.net/}operation") == "crop":
+            crop_item = li
             break
             
-    params_hex = clipping_item.get("{http://darktable.sf.net/}params")
+    params_hex = crop_item.get("{http://darktable.sf.net/}params")
     data = bytes.fromhex(params_hex)
-    angle, left, top, right, bottom = struct.unpack('<fffff', data[:20])
+    left, top, right, bottom = struct.unpack('<ffff', data[:16])
     
     assert left == 0.0
     assert top == 0.0

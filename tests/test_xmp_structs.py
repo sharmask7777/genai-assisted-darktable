@@ -4,6 +4,7 @@ from dt_ai.xmp import (
     get_exposure_params, 
     get_temperature_params, 
     get_clipping_params,
+    get_crop_params,
     get_ashift_params,
     get_diffuse_params
 )
@@ -48,6 +49,19 @@ def test_get_clipping_params_boundaries():
     assert cy == 0.0
     assert cw == 1.0
     assert ch == 1.0
+
+def test_get_crop_params():
+    # 24 bytes = 48 hex chars
+    hex_str = get_crop_params(0.1, 0.2, 0.8, 0.9)
+    assert len(hex_str) == 48
+    data = bytes.fromhex(hex_str)
+    left, top, right, bottom, zero1, zero2 = struct.unpack('<6f', data)
+    assert left == pytest.approx(0.1)
+    assert top == pytest.approx(0.2)
+    assert right == pytest.approx(0.8)
+    assert bottom == pytest.approx(0.9)
+    assert zero1 == 0.0
+    assert zero2 == 0.0
 
 def test_get_ashift_params():
     # 48 bytes = 96 hex chars

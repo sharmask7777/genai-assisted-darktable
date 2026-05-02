@@ -255,6 +255,14 @@ def get_clipping_params(cx: float, cy: float, cw: float, ch: float, ratio_n: int
                        k_type, k_sym, k_apply, crop_auto, ratio_n, ratio_d)
     return data.hex()
 
+def get_crop_params(left: float, top: float, right: float, bottom: float) -> str:
+    """
+    Generates hex-encoded parameters for the 'crop' v3 module.
+    Structure: 6 floats (24 bytes) -> left, top, right, bottom, 0.0, 0.0
+    """
+    data = struct.pack('<6f', left, top, right, bottom, 0.0, 0.0)
+    return data.hex()
+
 def get_ashift_params(rotation: float = 0.0, guide: int = 0) -> str:
     """
     Generates hex-encoded parameters for the 'ashift' v5 module.
@@ -368,9 +376,7 @@ def generate_crop_previews(raw_path: str, crop_suggestions: dict) -> List[str]:
         else:
             root = generate_skeleton()
             
-        # 1. Apply Clipping (Crop)
-        # For the 'clipping' module v5:
-        # cx = Left, cy = Top, cw = Right, ch = Bottom (all 0.0 to 1.0)
+        # 1. Apply Crop (Using the 'crop' v3 module found in user's XMP)
         ai_cx = params.get("cx", 0.5)
         ai_cy = params.get("cy", 0.5)
         ai_cw = params.get("cw", 1.0)
@@ -381,13 +387,8 @@ def generate_crop_previews(raw_path: str, crop_suggestions: dict) -> List[str]:
         right = max(left + 0.01, min(1.0, ai_cx + ai_cw/2))
         bottom = max(top + 0.01, min(1.0, ai_cy + ai_ch/2))
 
-        clip_hex = get_clipping_params(
-            cx=left,
-            cy=top,
-            cw=right,
-            ch=bottom
-        )
-        add_history_item(root, "clipping", clip_hex, "5")
+        crop_hex = get_crop_params(left, top, right, bottom)
+        add_history_item(root, "crop", crop_hex, "3")
         
         # 2. Apply Ashift (Rotation)
         # Ensure rotation is within reasonable bounds
