@@ -7,35 +7,25 @@ This file provides a starting point for AI assistants to navigate the `dt-ai` co
 graph TD
     Root[dt-ai Root] --> DTAI[dt_ai/]
     Root --> Tests[tests/]
-    Root --> Plan[.planning/]
+    Root --> Agents[.agents/]
     
     DTAI --> CLI[main.py - Click CLI]
-    DTAI --> AI[ai.py - Gemini Vision]
-    DTAI --> XMP[xmp.py - XMP Injection]
+    DTAI --> AI[ai.py - AI Prompts & Parsing]
+    DTAI --> XMP[xmp.py - XMP Injection & Encoding]
     DTAI --> Proc[processor.py - SIPS Preview]
     DTAI --> Disc[discovery.py - File Finder]
 ```
 
-### Core Subsystems
-- **CLI (`dt_ai/main.py`):** Orchestrates the `audit` and `edit` pipelines.
-- **Intelligence (`dt_ai/ai.py`):** Manages vision prompts and structured response parsing.
-- **Sidecar Engine (`dt_ai/xmp.py`):** Handles XML manipulation and IEEE 754 hex encoding for Darktable.
-- **Image Extraction (`dt_ai/processor.py`):** Interface for macOS `sips`.
+### Major Subsystems
+- **CLI Orchestration (`main.py`)**: Defines Click commands like `agent-next` and `apply-variations`.
+- **Sidecar Engine (`xmp.py`)**: Crucial for Darktable integration. Handles XML generation, AgX enforcement, and IEEE 754 hex encoding.
+- **Preview Extraction (`processor.py`)**: Uses macOS native `sips` for extremely fast thumbnail generation.
 
-## Repo-Specific Tools
-- **`uv`:** Used for environment management (`uv run dt-ai ...`).
-- **`sips`:** macOS native tool used for preview extraction.
-- **`darktable`:** Required to be installed on the system for XMP consumption and GUI handoff.
-
-## Key Patterns
-- **Non-Destructive Editing:** Original RAW files are never touched. All edits go to `.xmp` sidecars.
-- **Version Numbering:** The system automatically increments XMP version numbers (e.g., `image_01.arw.xmp`).
-- **Binary Encoding:** Darktable parameters are hex-encoded strings of little-endian floats. Use `dt_ai.xmp.encode_params`.
-
-## Configuration & Standards
-- **Linter:** Standard Python/Click conventions.
-- **Tests:** Run with `pytest`. Located in `tests/`.
-- **State:** Hidden `.dt-ai-state.json` file in the target directory manages session progress.
+## Repo-Specific Tools & Patterns
+- **`uv`**: We use `uv` for fast dependency management. Tests are run via `uv run pytest`.
+- **macOS `sips`**: Be aware that the preview generation is currently hardcoded to macOS.
+- **Non-Destructive XMP Generation**: The system never edits RAWs. It duplicates existing sidecars and increments their version number.
+- **JSON-based Agent Handoff**: `dt-ai agent-next` outputs a strict JSON payload that AI wrappers must parse.
 
 ## Custom Instructions
 

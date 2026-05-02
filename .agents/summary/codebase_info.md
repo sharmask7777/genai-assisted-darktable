@@ -1,36 +1,19 @@
-# Codebase Information - Darktable GenAI Assistant (dt-ai)
+# Codebase Information
 
-## Project Overview
-`dt-ai` is a macOS CLI tool designed to integrate Generative AI (Gemini) into the RAW photo editing workflow of Darktable. It provides an "AI first-pass" by analyzing images for aesthetics and composition, then injecting processing recommendations directly into Darktable XMP sidecar files.
+## Overview
+- **Name**: dt-ai (Darktable GenAI Assistant)
+- **Version**: 0.1.0
+- **Language**: Python (>=3.12)
+- **Frameworks**: Click (CLI)
+- **Build System**: Hatchling
 
-## Technology Stack
-- **Language:** Python 3.12+
-- **CLI Framework:** [Click](https://click.palletsprojects.com/)
-- **AI Integration:** Gemini API (via Gemini CLI wrapper)
-- **Image Processing:** macOS native `sips` (for preview extraction)
-- **Metadata Management:** XML (for Darktable XMP sidecars)
-- **Build System:** `uv` with `hatchling` backend
-- **Testing:** `pytest`
+## Structure
+The codebase consists of a single primary package `dt_ai` containing the core logic, along with a `tests` directory.
 
-## Key Packages & Modules
-- `dt_ai/`: Main application logic.
-  - `main.py`: CLI entry point and command definitions.
-  - `ai.py`: Gemini Vision integration and prompt management.
-  - `xmp.py`: Low-level XMP generation and module injection logic.
-  - `processor.py`: RAW-to-JPEG preview extraction using `sips`.
-  - `discovery.py`: File system traversal for RAW and sidecar files.
-  - `state.py`: Session management and persistence.
-  - `gui.py`: Automation for opening Darktable.
+- `dt_ai/`: Main application package
+- `tests/`: Pytest suite
 
-## Directory Structure
-- `dt_ai/`: Source code.
-- `tests/`: Comprehensive test suite covering all modules.
-- `.planning/`: Project requirements, roadmap, and design docs.
-- `.agents/`: AI-specific context and task tracking.
-- `.venv/`: Virtual environment (managed by `uv`).
-
-## Core Principles
-1. **Non-Destructive:** Never modifies RAW originals; only writes to `.xmp` sidecars.
-2. **Frugal Token Usage:** Uses low-resolution JPEG previews for Vision analysis.
-3. **Multi-Variation:** Generates multiple editing styles (Natural, Dramatic, Creative) for user selection.
-4. **Interactive Handoff:** Pauses for user confirmation on critical technical adjustments (e.g., Denoising).
+## Key Technologies
+- **macOS `sips`**: Used for fast, native preview extraction of RAW files.
+- **Darktable**: The target application; the system generates `.xmp` sidecar files compatible with Darktable's pipeline (specifically targeting the modern AgX workflow).
+- **Gemini**: The AI provider used for visual analysis and aesthetic recommendations.

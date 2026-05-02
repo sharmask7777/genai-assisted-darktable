@@ -1,52 +1,28 @@
-# Architecture - Darktable GenAI Assistant
+# Architecture
 
-## Overview
-The system follows a modular pipeline architecture, primarily driven by a CLI interface. It bridges the gap between RAW image data, AI vision analysis, and Darktable's non-destructive editing engine.
+## System Architecture
 
-## Architectural Map
+The dt-ai system is designed as a CLI-first application that acts as an intermediary between the user's filesystem (RAW photos), an AI Assistant (Gemini), and Darktable.
+
 ```mermaid
 graph TD
-    User([User]) -- CLI Commands --> Main[dt_ai.main]
-    Main --> Discovery[dt_ai.discovery]
-    Main --> Processor[dt_ai.processor]
-    Main --> AI[dt_ai.ai]
-    Main --> XMP[dt_ai.xmp]
-    Main --> GUI[dt_ai.gui]
+    User[User / AI Agent] --> CLI[dt-ai CLI]
+    CLI --> Discovery[Discovery & Metadata]
+    CLI --> Processor[Image Processor]
+    CLI --> State[State Management]
     
-    Discovery -- Scans --> RAW[RAW Files]
-    Processor -- sips --> Previews[JPEG Previews]
-    AI -- Gemini API --> Analysis[Aesthetic Audit]
-    XMP -- XML Manipulation --> Sidecars[.xmp Versions]
-    GUI -- open --> DT[Darktable]
+    Discovery --> FileSystem[(File System)]
+    Processor --> SIPS[macOS sips]
     
-    subgraph "External Systems"
-        DT
-        Gemini[Gemini API]
-        SIPS[macOS sips]
-    end
+    CLI --> AI[AI Integration]
+    CLI --> XMP[XMP Sidecar Engine]
+    
+    XMP --> FileSystem
+    FileSystem --> Darktable[Darktable GUI]
 ```
 
-## Design Patterns
+## Architectural Principles
 
-### 1. Command Pattern (CLI)
-The `click` framework is used to implement the Command pattern. Each CLI command (`init-session`, `audit`, `edit`) encapsulated a specific workflow and handles user interaction.
-
-### 2. Pipeline Pattern
-The `run_pipeline` function in `main.py` implements a sequential processing pipeline:
-1.  **Discovery:** Locate targets.
-2.  **Extraction:** Prepare visual data for AI.
-3.  **Analysis:** Obtain AI reasoning.
-4.  **Reporting:** Persist AI findings.
-5.  **Injection:** Transform AI findings into XMP modules.
-6.  **Handoff:** (Optional) Transition to interactive editing.
-
-### 3. Non-Destructive Layering
-The system treats the original RAW file as immutable. All state and edits are stored in `.xmp` sidecar files. Darktable's versioning system is leveraged by creating numbered sidecars (e.g., `image_01.arw.xmp`) to allow for multiple AI-suggested variations.
-
-### 4. Hex Encoding Utility
-The `xmp.py` module contains a specialized utility for encoding floating-point parameters into Darktable's internal hex format (IEEE 754 little-endian), acting as a bridge between high-level AI recommendations and low-level application state.
-
-## Integration Points
-- **Gemini CLI:** Used as the primary intelligence engine.
-- **sips:** Used for high-speed, native JPEG extraction from RAW.
-- **Darktable:** The target application for the generated metadata.
+1. **Non-Destructive Operations**: The system NEVER modifies the original RAW files. All edits and variations are written to Darktable-compatible `.xmp` sidecar files.
+2. **Stateless Operations with Persistent Sessions**: The CLI commands are mostly stateless but utilize a hidden `.dt-ai-state.json` file in the working directory to track session progress.
+3. **Hardware & Pipeline Awareness**: The architecture enforces modern scene-referred workflows (AgX, sigmoid) and applies hardware-specific sensor corrections automatically.

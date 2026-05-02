@@ -1,15 +1,13 @@
-# Review Notes - Darktable GenAI Assistant
+# Documentation Review Notes
 
-## Consistency Check
-- **Project Name vs. Package Name:** The project is named `dt-ai` in `pyproject.toml`, but the source package is `dt_ai`. This is correctly documented in `codebase_info.md`.
-- **Module Versions:** XMP module versions (e.g., Exposure v6) are consistently documented across `interfaces.md` and `data_models.md`.
+## Consistency Checks
+- ✅ **Architecture & Workflows**: The flow of data from CLI to XMP generation aligns perfectly across the architecture diagram and the sequence diagram.
+- ✅ **Interfaces & Models**: The JSON schema defined in `data_models.md` matches the input/output expectations documented in `interfaces.md`.
 
-## Completeness Check
-- **Discovery Patterns:** `discovery.py` logic for identifying RAW files was not deeply analyzed. It is assumed to use standard photographic extensions (.ARW, .CR2, etc.).
-- **GUI Automation:** `gui.py` uses the macOS `open` command. This is documented but the specific CLI flags used by Darktable (if any) are not detailed.
-- **Error Handling:** Pipeline error handling (try/except in `main.py`) is mentioned but not detailed in the workflow diagrams.
+## Completeness & Gaps
+- ⚠️ **Platform Support**: `processor.py` relies entirely on macOS `sips`. If this tool is intended to be generalizer across CLIs, cross-platform preview extraction (e.g., using `exiftool` or `magick`) is a significant gap in the current implementation.
+- ⚠️ **State Management**: The `.dt-ai-state.json` file is documented, but the exact mechanism for resolving conflicts (if the user manually deletes an XMP file) is not fully detailed in the current workflows.
 
 ## Recommendations
-1.  **Expand Discovery Docs:** Explicitly list supported RAW extensions in `components.md`.
-2.  **Add Testing Guide:** Create a `testing.md` or add a section to `dependencies.md` explaining how to run the extensive test suite.
-3.  **Refine GUI Docs:** Verify if Darktable requires specific arguments to open a file in the "darkroom" view vs "lighttable" view.
+- Add cross-platform support to `processor.py` to remove the macOS-only limitation.
+- Expand `xmp.py` documentation to include a full reference of supported Darktable modules and their required parameters.

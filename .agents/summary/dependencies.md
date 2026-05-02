@@ -1,27 +1,19 @@
-# Dependencies - Darktable GenAI Assistant
+# Dependencies
 
-## External Tools (Mandatory)
-The system relies on native OS tools and third-party software for core functionality.
+## Core Python Dependencies
 
-| Tool | Purpose | Source |
-|------|---------|--------|
-| `sips` | Native macOS Scriptable Image Processing System for JPEG extraction. | Pre-installed on macOS |
-| `darktable` | Target application for photo editing and XMP consumption. | [darktable.org](https://www.darktable.org/) |
-| `gemini-cli` | Provides the interface to Google Gemini Vision models. | Internal CLI Tool |
+| Package | Version | Purpose |
+|---------|---------|---------|
+| **click** | `>=8.1.7` | Framework for building the command-line interface. |
+| **pytest**| `>=9.0.3` | Testing framework (development dependency). |
 
-## Python Dependencies
-Managed via `pyproject.toml` and `uv`.
+## System Dependencies
 
-### Core
-- **`click` (>=8.1.7):** Used for building the CLI interface.
-- **`xml.etree.ElementTree`:** Built-in library for XMP (XML) manipulation.
-- **`struct`:** Built-in library for binary parameter encoding (IEEE 754).
+| Tool | Purpose | Note |
+|------|---------|------|
+| **macOS `sips`** | Image processing and fast JPEG extraction from RAW files. | **Platform Lock-in**: This currently ties the local execution of preview generation strictly to macOS. |
+| **Darktable** | Target application for the generated `.xmp` files. | Required to actually view and refine the edits. |
 
-### Development
-- **`pytest` (>=9.0.3):** Primary testing framework.
-- **`hatchling`:** Build backend.
-
-## Environment Requirements
-- **OS:** macOS (required for `sips` and `open` commands).
-- **Python:** 3.12 or higher.
-- **API Keys:** Requires a valid configuration for Gemini CLI to reach cloud vision models.
+## Build System
+- **Hatchling**: Used as the PEP 517 build backend (`pyproject.toml`).
+- **uv**: Recommended for fast package and environment management.

@@ -1,60 +1,40 @@
-# Workflows - Darktable GenAI Assistant
+# Workflows
 
-## 1. Aesthetic Audit Workflow (`dt-ai audit`)
-This workflow focuses on technical and aesthetic evaluation without modifying image state.
+## Standard AI Agent Workflow
+
+This workflow represents how an external AI agent interacts with the `dt-ai` tools.
 
 ```mermaid
 sequenceDiagram
     participant User
-    participant CLI
-    participant SIPS
-    participant Gemini
-    participant FS
-
-    User->>CLI: dt-ai audit [path]
-    CLI->>FS: Discover RAW files
-    loop Each File
-        CLI->>SIPS: Extract preview (downscaled JPEG)
-        CLI->>Gemini: analyze_image(preview)
-        Gemini-->>CLI: Markdown (Audit + JSON)
-        CLI->>FS: Save [file]_audit.md
-    end
-    CLI-->>User: Pipeline Complete
+    participant Agent
+    participant DTAI as dt-ai CLI
+    participant FS as File System
+    
+    User->>Agent: Start session on /folder
+    Agent->>DTAI: dt-ai init-session /folder
+    DTAI->>FS: Create .dt-ai-state.json
+    
+    User->>Agent: Process IMG_001.ARW
+    Agent->>DTAI: dt-ai agent-next IMG_001.ARW
+    DTAI->>FS: extract preview with sips
+    DTAI-->>Agent: JSON payload (metadata, preview path)
+    
+    Agent->>Agent: Analyze preview visually
+    Agent->>Agent: Generate editing strategy
+    
+    Agent->>DTAI: dt-ai apply-variations IMG_001.ARW <json_strategy>
+    DTAI->>FS: Write IMG_001.ARW.xmp files
+    DTAI->>FS: Update .dt-ai-state.json
+    DTAI-->>Agent: Success report
+    
+    Agent->>User: Done! Review in Darktable
 ```
 
-## 2. GenAI Edit Workflow (`dt-ai edit`)
-This workflow extends the audit by generating three distinct processing variations.
+## Variation Generation Pipeline
 
-```mermaid
-sequenceDiagram
-    participant CLI
-    participant Gemini
-    participant XMP
-    participant DT as Darktable
-    participant User
-
-    CLI->>Gemini: analyze_image(preview)
-    Gemini-->>CLI: Recommendations + 3 Variations
-    
-    loop Style in [Natural, Dramatic, Creative]
-        CLI->>XMP: get_next_version_path()
-        XMP->>XMP: Generate XMP Skeleton
-        XMP->>XMP: Inject Exposure (Hex)
-        XMP->>XMP: Inject Temperature (Hex)
-        XMP->>XMP: Write [file]_0[N].xmp
-    end
-    
-    alt Denoise Recommended
-        CLI->>DT: Open File for Validation
-        CLI->>User: Pause for Interactive Handoff
-        User-->>CLI: Continue
-    end
-    
-    CLI-->>User: Versions Created
-```
-
-## 3. Interactive Handoff (Denoise Safety)
-Because AI-driven denoising is risky and hardware-dependent, the system includes a "Take a Call" safety check:
-1.  **Detection:** `main.py` checks recommendations for "denoise".
-2.  **Automation:** Launches Darktable using `gui.py`.
-3.  **Interaction:** Prompts the user to validate settings before moving to the next image in a batch.
+1. **Pre-flight Report**: `main.py` formats the AI's intent into a readable summary.
+2. **Hardware Corrections**: `xmp.py` checks metadata (e.g. camera model) and applies necessary offsets (like black-point fixes).
+3. **AgX Enforcement**: Darktable legacy tone mappers are disabled, and modern scene-referred modules are enabled.
+4. **Encoding**: Target parameters (exposure, kelvin) are converted to IEEE 754 little-endian hex strings.
+5. **XML Writing**: Duplicate `.xmp` files are written to disk.

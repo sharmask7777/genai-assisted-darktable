@@ -1,50 +1,21 @@
-# Interfaces - Darktable GenAI Assistant
+# Interfaces
 
-## CLI Interface
-The CLI is built with `click`.
+## Command Line Interface (CLI)
 
-| Command | Argument | Options | Description |
-|---------|----------|---------|-------------|
-| `init-session` | `PATH` | None | Initializes/Resumes a session in the given directory. |
-| `audit` | `PATH` | `--dry-run` | Performs image analysis and saves Markdown reports. |
-| `edit` | `PATH` | `--dry-run` | Performs analysis and generates 3 XMP sidecar variations. |
+The primary interface is the `dt-ai` CLI, built with Click.
 
-## Gemini API Contract
-The system communicates with Gemini via a Vision prompt. The expected response is a Markdown block containing a JSON object.
+### Internal Agent Commands
+These commands are designed to be called by an AI agent script or wrapper:
 
-### Request Payload
-- **Image:** Downscaled JPEG preview (max ~1MB).
-- **Prompt:** Aesthetic audit instructions + request for specific Darktable parameters (Exposure, Kelvin).
+- `dt-ai agent-next <image_path>`: Returns a JSON payload containing the image preview path, neighboring context, extracted metadata, and the appropriate AI prompt.
+- `dt-ai apply-variations <image_path> <ai_result_json> [--yolo]`: Receives the AI's structured edit decisions, generates a pre-flight report, and writes the resulting `.xmp` sidecars.
 
-### Response Schema
-```json
-{
-  "audit": "Detailed aesthetic analysis text...",
-  "recommendations": ["Denoise (profiled)", "Exposure", "Color balance RGB"],
-  "variations": {
-    "natural": { "exposure": 0.5, "kelvin": 5500 },
-    "dramatic": { "exposure": -0.8, "kelvin": 6200 },
-    "creative": { "exposure": 0.2, "kelvin": 4800 }
-  }
-}
-```
+### User Commands
+- `dt-ai init-session <directory>`: Initializes a tracking state file in a given directory.
+- `dt-ai audit <directory>`: Legacy/standalone command to run a read-only aesthetic audit.
+- `dt-ai edit <directory>`: Legacy/standalone command to generate AI variations for all files in a directory.
 
-## Darktable XMP Structure
-Sidecars are XML files with specific namespaces and history sequences.
+## System Integration Points
 
-### Core Namespace Map
-```python
-NS = {
-    "x": "adobe:ns:meta/",
-    "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
-    "darktable": "http://darktable.sf.net/",
-}
-```
-
-### Module History Item Schema
-Each history item (`li` in `rdf:Seq`) requires:
-- `darktable:num`: Position in stack.
-- `darktable:operation`: Module name (e.g., `exposure`).
-- `darktable:modversion`: Module version (e.g., `6` for exposure).
-- `darktable:params`: Hex-encoded IEEE 754 little-endian binary data.
-- `darktable:enabled`: "1" or "0".
+- **macOS `sips`**: Called via `subprocess` to extract previews. This is a hard dependency on the host OS.
+- **Darktable XMP Schema**: The application writes XML files that conform to Darktable's proprietary sidecar schema, including specific module names (`colorcalibration`, `sigmoid`, `exposure`) and hex-encoded parameters.

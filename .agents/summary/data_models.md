@@ -1,38 +1,59 @@
-# Data Models - Darktable GenAI Assistant
+# Data Models
 
-## Session State (`.dt-ai-state.json`)
-The session state tracks progress across directory-level edits.
+## AI Payload Schema
+
+When `agent-next` is called, it outputs a JSON payload structured as follows:
 
 ```json
 {
-  "directory": "/Users/shaleensharma/Pictures/Shoot_01",
-  "files_processed": [
-    "DSC0123.ARW",
-    "DSC0124.ARW"
-  ],
-  "last_run": "2026-05-01T14:30:00Z"
+  "prompt": "String containing instructions",
+  "target_image": "/absolute/path/to/raw",
+  "target_preview": "/path/to/extracted/jpeg",
+  "neighbors": ["/path/to/neighbor1.raw"],
+  "metadata": {
+    "model": "Camera Model",
+    "lens": "Lens Info",
+    "iso": "100",
+    "exposure": "1/200",
+    "aperture": "f/8"
+  },
+  "state": { "history": [], "last_processed": null },
+  "research_database": {
+    "wildlife": "...",
+    "landscape": "..."
+  }
 }
 ```
 
-## AI Variation Model
-The `variations` dictionary returned by Gemini defines the targets for XMP injection.
+## AI Result JSON
 
-### Attribute Mapping
-| AI Key | Darktable Module | Darktable Version | Struct Format |
-|--------|------------------|-------------------|---------------|
-| `exposure` | `exposure` | 6 | `iffff` (mode, black, exposure, pct, target) |
-| `kelvin` | `temperature` | 3 | `ffff` (red, green1, blue, green2) |
+When calling `apply-variations`, the expected input JSON must contain:
 
-## Internal XMP Representation
-The system uses `xml.etree.ElementTree` to model the XMP XML.
+```json
+{
+  "subject": "wildlife",
+  "analysis": "Image needs contrast and shadow recovery.",
+  "research_rationale": "Wildlife benefits from sharp subject isolation.",
+  "audit": "Full markdown text of the mentor review.",
+  "recommendations": ["denoiseprofile", "diffuse"],
+  "variations": {
+    "natural": {"exposure": 0.5, "kelvin": 5500},
+    "dramatic": {"exposure": 1.0, "kelvin": 6000}
+  }
+}
+```
 
-### Skeleton Description
-- Root: `x:xmpmeta`
-- Child: `rdf:RDF`
-- Child: `rdf:Description` (contains `darktable:xmp_version`, `darktable:history_end`)
-- Child: `darktable:history` -> `rdf:Seq` (contains the list of `rdf:li` module entries)
+## Session State (`.dt-ai-state.json`)
 
-## Hex Encoding (IEEE 754)
-Floating point values from AI are converted to little-endian bytes and then hex-encoded.
-- Example: `0.0` (float) -> `00000000`
-- Example: `1.0` (float) -> `0000803f`
+```json
+{
+  "history": [
+    {
+      "image": "IMG_001.ARW",
+      "styles": ["natural", "dramatic"],
+      "timestamp": "now"
+    }
+  ],
+  "last_processed": "IMG_001.ARW"
+}
+```
