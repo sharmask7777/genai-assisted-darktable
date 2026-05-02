@@ -390,15 +390,11 @@ def generate_crop_previews(raw_path: str, crop_suggestions: dict) -> List[str]:
         crop_hex = get_crop_params(left, top, right, bottom)
         add_history_item(root, "crop", crop_hex, "3")
         
-        # 2. Apply Ashift (Rotation)
-        # Ensure rotation is within reasonable bounds
-        rot_val = params.get("rotation", 0.0)
-        if abs(rot_val) > 180: rot_val = 0.0
-        
-        ashift_hex = get_ashift_params(
-            rotation=rot_val
-        )
-        add_history_item(root, "ashift", ashift_hex, "5")
+        # 2. Apply Ashift (Rotation) - DISABLED TEMPORARILY TO FIX INSANE DATA
+        # rot_val = params.get("rotation", 0.0)
+        # if abs(rot_val) > 180: rot_val = 0.0
+        # ashift_hex = get_ashift_params(rotation=rot_val)
+        # add_history_item(root, "ashift", ashift_hex, "5")
         
         write_xmp(root, target_path)
         generated.append(target_path)
