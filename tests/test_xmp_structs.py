@@ -63,15 +63,58 @@ def test_get_crop_params():
     assert zero1 == 0.0
     assert zero2 == 0.0
 
+import zlib
+import base64
+
 def test_get_ashift_params():
-    # 48 bytes = 96 hex chars
-    hex_str = get_ashift_params(rotation=-1.5)
-    assert len(hex_str) == 96
+    # 892 bytes compressed will be much smaller, prefixed with gz16
+    hex_encoded = get_ashift_params(rotation=-1.5, focal_length=50.0, crop_factor=1.5)
+    assert hex_encoded.startswith("gz16")
     
-    data = bytes.fromhex(hex_str)
+    # Decode and decompress
+    # format is gz<NN><base64>
+    # gz16 is 4 chars.
+    b64_data = hex_encoded[4:]
+    compressed_data = base64.b64decode(b64_data)
+    data = zlib.decompress(compressed_data)
+    
+    assert len(data) == 892
+    
     # offset 0 is rotation (float)
     rotation = struct.unpack('<f', data[:4])[0]
     assert rotation == pytest.approx(-1.5)
+    
+    # offset 16 is focal length
+    focal = struct.unpack('<f', data[16:20])[0]
+    assert focal == pytest.approx(50.0)
+    
+def test_ashift_sample_verification():
+    # Values from 1X7A4488.jpg.xmp
+    rotation = 1.76
+    focal = 600.0
+    crop = 3.386362
+    
+    hex_encoded = get_ashift_params(rotation=rotation, focal_length=focal, crop_factor=crop)
+    
+    # Decode and decompress
+    b64_data = hex_encoded[4:]
+    compressed_data = base64.b64decode(b64_data)
+    data = zlib.decompress(compressed_data)
+    
+    assert len(data) == 892
+    
+    # Verify values
+    res_rotation = struct.unpack('<f', data[:4])[0]
+    res_focal = struct.unpack('<f', data[16:20])[0]
+    res_crop = struct.unpack('<f', data[20:24])[0]
+    
+    assert res_rotation == pytest.approx(rotation)
+    assert res_focal == pytest.approx(focal)
+    assert res_crop == pytest.approx(crop)
+    
+    # Verify cropmode
+    cropmode = struct.unpack('<i', data[36:40])[0]
+    assert cropmode == 1
 
 def test_get_diffuse_params():
     # 68 bytes = 136 hex chars

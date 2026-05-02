@@ -39,12 +39,13 @@ MODERN_PIPELINE = [
 
 # Hardware-specific correction database
 # Keys are 'model' or 'lens' substrings. 
-# Values are dicts with corrections: black_offset, green_gain, red_gain.
+# Values are dicts with corrections: black_offset, green_gain, red_gain, crop_factor.
 SENSOR_DATABASE = {
-    "ILCE-7M3": {"black_offset": 0.0002, "green_gain": 1.0, "red_gain": 1.0}, # Sony A7III
-    "ILCE-7RM4": {"black_offset": 0.0003, "green_gain": 1.0, "red_gain": 1.0}, # Sony A7RIV
-    "SAMSUNG": {"black_offset": 0.0005, "green_gain": 0.98, "red_gain": 1.02}, # Generic Samsung shift
-    "EOS R5": {"black_offset": 0.0, "green_gain": 1.0, "red_gain": 1.0}, # Canon usually neutral
+    "ILCE-7M3": {"black_offset": 0.0002, "green_gain": 1.0, "red_gain": 1.0, "crop_factor": 1.0}, # Sony A7III
+    "ILCE-7RM4": {"black_offset": 0.0003, "green_gain": 1.0, "red_gain": 1.0, "crop_factor": 1.0}, # Sony A7RIV
+    "SAMSUNG": {"black_offset": 0.0005, "green_gain": 0.98, "red_gain": 1.02, "crop_factor": 1.5}, # Generic Samsung shift
+    "EOS R5": {"black_offset": 0.0, "green_gain": 1.0, "red_gain": 1.0, "crop_factor": 1.0}, # Canon Full Frame
+    "EOS R7": {"black_offset": 0.0, "green_gain": 1.0, "red_gain": 1.0, "crop_factor": 1.6}, # Canon APS-C
 }
 
 # Register namespaces
@@ -58,7 +59,7 @@ def apply_hardware_corrections(metadata: dict) -> dict:
     model = metadata.get("model", "").upper()
     lens = metadata.get("lens", "").upper()
     
-    corrections = {"black_offset": 0.0, "green_gain": 1.0, "red_gain": 1.0}
+    corrections = {"black_offset": 0.0, "green_gain": 1.0, "red_gain": 1.0, "crop_factor": 1.0}
     
     # Check for model matches
     for key, data in SENSOR_DATABASE.items():
@@ -263,30 +264,40 @@ def get_crop_params(left: float, top: float, right: float, bottom: float) -> str
     data = struct.pack('<6f', left, top, right, bottom, 0.0, 0.0)
     return data.hex()
 
-def get_ashift_params(rotation: float = 0.0, guide: int = 0) -> str:
+import zlib
+import base64
+
+def get_ashift_params(rotation: float = 0.0, focal_length: float = 28.0, crop_factor: float = 1.0) -> str:
     """
-    Generates hex-encoded parameters for the 'ashift' v5 module.
-    Struct: rotation (f), lensshift_v (f), lensshift_h (f), shear (f), aspect (f), 
-            clip (i), mirror_v (i), mirror_h (i), guide (i), focal (f), k (f), fit_mode (i)
-    Total size: 12 * 4 = 48 bytes.
+    Generates hex-encoded (and compressed) parameters for the 'ashift' v5 module.
+    Structure: dt_iop_ashift_params_t (892 bytes)
     """
+    # ASHIFT_STRUCT_SIZE = 892
+    data = bytearray(892)
+
     lensshift_v = 0.0
     lensshift_h = 0.0
     shear = 0.0
-    aspect = 1.0 # 1.0 is default
-    clip = 1      # 1: largest area
-    mirror_v = 0
-    mirror_h = 0
-    focal = 0.0
-    k = 0.0
-    fit_mode = 0
-    
-    # Pack: 5 floats, 4 ints, 2 floats, 1 int
-    data = struct.pack('<5f4i2fi',
-                       rotation, lensshift_v, lensshift_h, shear, aspect,
-                       clip, mirror_v, mirror_h, guide, focal, k, fit_mode)
-    return data.hex()
+    orthocorr = 100.0
+    aspect = 1.0
+    mode = 0      # ASHIFT_MODE_GENERIC
+    cropmode = 1  # ASHIFT_CROP_LARGEST
+    cl = 0.0
+    cr = 1.0
+    ct = 0.0
+    cb = 1.0
 
+    # Pack the first 56 bytes: 8 floats, 2 ints, 4 floats
+    struct.pack_into('<8f2i4f', data, 0,
+                     rotation, lensshift_v, lensshift_h, shear, focal_length, crop_factor, orthocorr, aspect,
+                     mode, cropmode, cl, cr, ct, cb)
+
+    # Compress with zlib
+    compressed = zlib.compress(data)
+    
+    # Base64 encode and prefix with gz16
+    encoded = base64.b64encode(compressed).decode('ascii')
+    return f"gz16{encoded}"
 def get_diffuse_params(iterations: int = 10, radius: float = 0.0) -> str:
     """
     Generates hex-encoded parameters for the 'diffuse' module.
@@ -356,10 +367,16 @@ def get_crop_preview_path(raw_path: str, crop_id: int) -> str:
     # Use 2-digit padding for Darktable versioning (e.g., image_01.jpg.xmp)
     return f"{base}_{crop_id:02d}{ext}.xmp"
 
-def generate_crop_previews(raw_path: str, crop_suggestions: dict) -> List[str]:
+def generate_crop_previews(raw_path: str, crop_suggestions: dict, metadata: dict = None) -> List[str]:
     """Generates temporary XMP sidecars for each crop suggestion."""
     generated = []
     options = crop_suggestions.get("options", [])
+    metadata = metadata or {}
+    
+    # Extract metadata and hardware corrections for ashift
+    hw = apply_hardware_corrections(metadata)
+    focal = float(metadata.get("focal_length", 28.0))
+    crop_factor = float(metadata.get("crop_factor", hw["crop_factor"]))
     
     for opt in options:
         crop_id = opt.get("id")
@@ -390,11 +407,13 @@ def generate_crop_previews(raw_path: str, crop_suggestions: dict) -> List[str]:
         crop_hex = get_crop_params(left, top, right, bottom)
         add_history_item(root, "crop", crop_hex, "3")
         
-        # 2. Apply Ashift (Rotation) - DISABLED TEMPORARILY TO FIX INSANE DATA
-        # rot_val = params.get("rotation", 0.0)
-        # if abs(rot_val) > 180: rot_val = 0.0
-        # ashift_hex = get_ashift_params(rotation=rot_val)
-        # add_history_item(root, "ashift", ashift_hex, "5")
+        # 2. Apply Ashift (Rotation)
+        rot_val = params.get("rotation", 0.0)
+        # Only apply if rotation is non-zero (intelligent rotation)
+        if abs(rot_val) > 0.001:
+            if abs(rot_val) > 180: rot_val = 0.0
+            ashift_hex = get_ashift_params(rotation=rot_val, focal_length=focal, crop_factor=crop_factor)
+            add_history_item(root, "ashift", ashift_hex, "5")
         
         write_xmp(root, target_path)
         generated.append(target_path)
@@ -485,6 +504,17 @@ def generate_variations(raw_path: str, ai_result: dict, metadata: dict = None) -
                 rotation=params.get("rotation")
             )
             add_history_item(root, "sigmoid", sig_hex, "3")
+        
+        # 7. Inject Rotation (Ashift)
+        rot_val = params.get("rotation", 0.0)
+        if abs(rot_val) > 0.001:
+            if abs(rot_val) > 180: rot_val = 0.0
+            ashift_hex = get_ashift_params(
+                rotation=rot_val, 
+                focal_length=float(metadata.get("focal_length", 28.0)), 
+                crop_factor=float(metadata.get("crop_factor", hw["crop_factor"]))
+            )
+            add_history_item(root, "ashift", ashift_hex, "5")
         
         # Enforce modern workflow (disables legacy, ensures AgX-compatibility)
         enforce_agx_workflow(root)

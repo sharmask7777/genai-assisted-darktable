@@ -1,0 +1,38 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.12.2, pytest-9.0.3, pluggy-1.6.0
+rootdir: /Users/shaleensharma/workplace/gemini_ws/photo-editting
+configfile: pyproject.toml
+collected 2 items
+
+tests/test_crop_math.py .F                                               [100%]
+
+=================================== FAILURES ===================================
+__________________________ test_rotation_application ___________________________
+
+tmp_path = PosixPath('/private/var/folders/2w/8ly4glt14d50w43q9zbvlf600000gn/T/pytest-of-shaleensharma/pytest-68/test_rotation_application0')
+
+    def test_rotation_application(tmp_path):
+        # Setup dummy RAW file
+        raw_file = tmp_path / "test_rot.ARW"
+        raw_file.touch()
+    
+        suggestions = {
+            "options": [
+                {
+                    "id": 1,
+                    "name": "Rotated Crop",
+                    "params": {"cx": 0.5, "cy": 0.5, "cw": 0.5, "ch": 0.5, "rotation": 5.0}
+                }
+            ]
+        }
+    
+        # Metadata for ashift
+        metadata = {"focal_length": 35.0, "crop_factor": 1.0}
+    
+>       generate_crop_previews(str(raw_file), suggestions, metadata=metadata)
+E       TypeError: generate_crop_previews() got an unexpected keyword argument 'metadata'
+
+tests/test_crop_math.py:98: TypeError
+=========================== short test summary info ============================
+FAILED tests/test_crop_math.py::test_rotation_application - TypeError: genera...
+========================= 1 failed, 1 passed in 0.02s ==========================

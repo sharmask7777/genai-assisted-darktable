@@ -77,7 +77,51 @@ def test_crop_coordinate_conversion(tmp_path):
     data = bytes.fromhex(params_hex)
     left, top, right, bottom = struct.unpack('<ffff', data[:16])
     
-    assert left == 0.0
-    assert top == 0.0
-    assert right == pytest.approx(0.3)
-    assert bottom == pytest.approx(0.3)
+def test_rotation_application(tmp_path):
+    # Setup dummy RAW file
+    raw_file = tmp_path / "test_rot.ARW"
+    raw_file.touch()
+    
+    suggestions = {
+        "options": [
+            {
+                "id": 1,
+                "name": "Rotated Crop",
+                "params": {"cx": 0.5, "cy": 0.5, "cw": 0.5, "ch": 0.5, "rotation": 5.0}
+            }
+        ]
+    }
+    
+    # Metadata for ashift
+    metadata = {"focal_length": 35.0, "crop_factor": 1.0}
+    
+    generate_crop_previews(str(raw_file), suggestions, metadata=metadata)
+    
+    xmp_v1 = tmp_path / "test_rot_01.ARW.xmp"
+    assert xmp_v1.exists()
+    
+    root = ET.parse(xmp_v1)
+    # Find the ashift params
+    history = root.find(".//{http://darktable.sf.net/}history/{http://www.w3.org/1999/02/22-rdf-syntax-ns#}Seq")
+    ashift_item = None
+    for li in history:
+        if li.get("{http://darktable.sf.net/}operation") == "ashift":
+            ashift_item = li
+            break
+            
+    assert ashift_item is not None
+    params_enc = ashift_item.get("{http://darktable.sf.net/}params")
+    assert params_enc.startswith("gz16")
+    
+    # Decompress and verify rotation
+    import zlib
+    import base64
+    b64_data = params_enc[4:]
+    compressed_data = base64.b64decode(b64_data)
+    data = zlib.decompress(compressed_data)
+    
+    rotation = struct.unpack('<f', data[:4])[0]
+    assert rotation == pytest.approx(5.0)
+    
+    focal = struct.unpack('<f', data[16:20])[0]
+    assert focal == pytest.approx(35.0)

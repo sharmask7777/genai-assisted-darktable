@@ -1,0 +1,23 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.12.2, pytest-9.0.3, pluggy-1.6.0
+rootdir: /Users/shaleensharma/workplace/gemini_ws/photo-editting
+configfile: pyproject.toml
+collected 7 items
+
+tests/test_xmp_structs.py .....F.                                        [100%]
+
+=================================== FAILURES ===================================
+____________________________ test_get_ashift_params ____________________________
+
+    def test_get_ashift_params():
+        # 892 bytes compressed will be much smaller, prefixed with gz16
+        hex_encoded = get_ashift_params(rotation=-1.5, focal_length=50.0, crop_factor=1.5)
+>       assert hex_encoded.startswith("gz16")
+E       AssertionError: assert False
+E        +  where False = <built-in method startswith of str object at 0x13593b800>('gz16')
+E        +    where <built-in method startswith of str object at 0x13593b800> = '0000c0bf000000000000000000000000000048420000c03f0000c8420000803f0000000001000000000000000000803f000000000000803f00000...0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000'.startswith
+
+tests/test_xmp_structs.py:72: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_xmp_structs.py::test_get_ashift_params - AssertionError: as...
+========================= 1 failed, 6 passed in 0.03s ==========================

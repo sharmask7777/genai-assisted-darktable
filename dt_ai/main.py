@@ -192,7 +192,8 @@ def apply_variations(image_path, ai_result_json, mode, yolo):
     ai_result = json.loads(ai_result_json)
     
     if mode == 'crop-preview':
-        versions = generate_crop_previews(abs_path, ai_result)
+        metadata = get_raw_metadata(abs_path)
+        versions = generate_crop_previews(abs_path, ai_result, metadata=metadata)
         click.echo(json.dumps({"versions": versions}))
         return
 

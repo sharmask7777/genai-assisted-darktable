@@ -21,7 +21,7 @@ def get_raw_metadata(path: str) -> Dict[str, str]:
     try:
         cmd = ['mdls', '-name', 'kMDItemModel', '-name', 'kMDItemLensModel', 
                '-name', 'kMDItemISOSpeed', '-name', 'kMDItemExposureTimeSeconds', 
-               '-name', 'kMDItemFNumber', path]
+               '-name', 'kMDItemFNumber', '-name', 'kMDItemFocalLength', path]
         result = subprocess.run(cmd, capture_output=True, text=True)
         if result.returncode == 0:
             output = result.stdout
@@ -30,7 +30,8 @@ def get_raw_metadata(path: str) -> Dict[str, str]:
                 'kMDItemLensModel': 'lens',
                 'kMDItemISOSpeed': 'iso',
                 'kMDItemExposureTimeSeconds': 'exposure',
-                'kMDItemFNumber': 'aperture'
+                'kMDItemFNumber': 'aperture',
+                'kMDItemFocalLength': 'focal_length'
             }
             for line in output.splitlines():
                 for key, internal in mdls_mappings.items():
@@ -51,7 +52,8 @@ def get_raw_metadata(path: str) -> Dict[str, str]:
                 'lensModel': 'lens',
                 'ISO': 'iso',
                 'exposureTime': 'exposure',
-                'aperture': 'aperture'
+                'aperture': 'aperture',
+                'focalLength': 'focal_length'
             }
             
             for line in output.splitlines():
