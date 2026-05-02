@@ -55,29 +55,53 @@ Now, let's set up the assistant. In your **Terminal**, you need to "go into" the
    uv sync
    ```
 
-### 3. Connect the Assistant
-*Note: We are currently transitioning to a unified Model Context Protocol (MCP) server. In the meantime, you can interact with the Python CLI directly, or use your preferred AI agent by instructing it to use the `dt-ai` commands.*
+### 3. Connect the Assistant to your CLI
+Run this command once to make the "Mentorship" instructions available to your AI:
+```bash
+gemini skills link skills/genai-assisted-darktable --scope workspace
+```
 
 ---
 
-## 🤖 Using AI Assistants (Claude, Gemini, Kiro)
+## 🤖 Using Other AI Assistants (Claude, Kiro)
 
-Because `dt-ai` exposes predictable CLI commands, you can use any terminal-based AI assistant. We are actively developing native MCP (Model Context Protocol) support for seamless integration across all major AI tools.
+While this project is designed for the Gemini CLI, the core workflow can be adapted to other conversational AI assistants.
 
-For now, you can start your preferred AI assistant in your terminal (e.g., `gemini`, `claude`, or `kiro`) and provide it with the core instructions from this project.
+### Gemini
+Continue to use the `gemini` command as described.
+```bash
+gemini
+```
+
+### Claude
+To use Claude, you would start its own command-line interface (if available):
+```bash
+claude
+```
+
+### Kiro
+To use the Kiro assistant, you would use its dedicated CLI tool:
+```bash
+kiro-cli
+```
+
+After starting the alternative assistant, you would need to manually guide it through the mentorship steps outlined in the "How to Edit Your First Project" section, as the automated skill linking is specific to Gemini CLI.
 
 ---
 
 ## 📖 How to Edit Your First Project
 
 ### Step 1: Start the Mentorship
-In your terminal, start your AI assistant. Then, ask it to assume the role of a photography mentor and to use the local `dt-ai` commands to analyze your photos.
-
-> "Act as my photography mentor. I want to edit some RAW photos. Please use the `uv run dt-ai` CLI commands to help me analyze them."
+In your terminal, type:
+```bash
+gemini
+```
+Then, once inside the Gemini session, say:
+> "Start the darktable mentorship workflow."
 
 ### Step 2: Provide Your Photo Path
-Tell the AI where your RAW files are:
-> "My photos are located in `/Users/yourname/Pictures/Wildlife_Shoot`."
+The AI will ask: *"What is the directory for the images?"*
+- **Copy and paste** the folder path where your RAW files are (e.g., `/Users/yourname/Pictures/Wildlife_Shoot`).
 
 ### Step 3: Set Up Darktable
 The AI will guide you to:
