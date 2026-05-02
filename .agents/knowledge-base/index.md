@@ -19,6 +19,7 @@ This index serves as the primary entry point for the `dt-ai` intelligent researc
 | **Raptors** | Surgical sharpening for talons/beaks and background management. | `niche/raptors.md` |
 | **Small Birds** | Feather acutance, background separation, and eye catchlight sparkle. | `niche/small-birds.md` |
 | **Mammals**     | Fur texture, AgX depth, and jungle color calibration. | `niche/mammals.md` |
+| **White Birds** | Highlight texture, AgX brilliance, and Guided Laplacians. | `niche/white-birds.md` |
 | **Bird Cropping**| Specialized wildlife rules: avoiding joint cuts and beak-lead room. | `niche/bird-cropping.md` |
 
 ---
