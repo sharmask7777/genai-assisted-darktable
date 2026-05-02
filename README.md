@@ -16,6 +16,15 @@ If you don't know how to use GitHub, follow these 3 simple steps to get started:
 
 ---
 
+## 🚀 What's New in 2026
+
+- **Intelligent Cropping Selection**: Gemini suggests 3 expert crops (including rotation) for you to preview in Darktable before committing to aesthetic edits.
+- **Advanced Detail Management**: Automated support for the `diffuse or sharpen` module for surgical deblurring and noise reduction.
+- **Deep Research**: The AI now searches for creative professional tutorials to inform its aesthetic choices.
+- **Parity Assurance**: Built-in auditing ensures the tool stays in sync with the latest Darktable binary standards.
+
+---
+
 ## 🦉 How it Works (In Plain English)
 1. **The Hand-off**: You tell the AI which directory your photos are in.
 2. **The Preview**: The tool creates a small, high-quality copy of your photo for the AI to look at (this saves time and internet data).

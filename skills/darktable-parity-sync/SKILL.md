@@ -28,15 +28,15 @@ Initialize the parity sync environment and perform a full codebase analysis of `
 ### 2. External Parity Research
 Conduct research using web search, official Darktable blogs, and the primary GitHub repository to identify:
 - New modules (e.g., AgX, Capture Sharpness).
-- Deprecated modules (e.g., Levels, Contrast).
-- Database or XMP schema changes (e.g., v6 Exposure, Workspaces).
+- Current version numbers for `clipping`, `ashift`, and `diffuse or sharpen`.
 - Industry best practices for RAW editing in 2026.
 
 ### 3. Parity Audit & Gap Analysis
-Generate a structured `REPORT.md` in the progress directory using standard industry auditing patterns:
-- **Gap Analysis Table:** Current State vs. Industry Standard.
-- **Risk Assessment:** Impact of outdated schemas or prompts.
-- **Remediation Plan:** Proposed TDD implementation steps.
+Generate a structured `REPORT.md` in the progress directory:
+- **Gap Analysis Table**: Current State vs. Industry Standard.
+- **Module Version Check**: Verify `clipping` (v5), `ashift` (v5), and `diffuse` (v2) struct offsets.
+- **Sequence Check**: Ensure the "Denoise-before-Sharpen" pipeline order is enforced in `xmp.py`.
+- **Remediation Plan**: Proposed TDD implementation steps.
 
 ### 4. TDD Planning & Proposal
 Transform the audit findings into a Test-Driven Development plan.

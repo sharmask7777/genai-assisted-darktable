@@ -24,6 +24,7 @@ To elevate the `dt-ai` mentorship experience from basic exposure/color correctio
 - [ ] **CROP-02**: Update `SKILL.md` and `apply-variations` to support a two-stage selection flow: User selects a crop before aesthetic edits are applied.
 - [ ] **MOD-01**: Implement `diffuse or sharpen` module support in `xmp.py` with binary C-struct parameter packing.
 - [ ] **KB-01**: Research best practices for `diffuse or sharpen` (noise vs. deblur vs. sharpen) and integrate into the AI system prompt.
+- [ ] **SYNC-01**: Update `darktable-parity-sync` skill to include the new binary struct standards and expert sequencing rules in its audit logic.
 
 ### Out of Scope
 - **GUI-01**: Custom cropping interface (relying on CLI selection and Darktable preview).

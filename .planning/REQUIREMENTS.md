@@ -14,6 +14,7 @@
 ### Knowledge Base Integration
 - [ ] **KB-01**: Conduct research on Darktable's scene-referred detail modules and encode "expert rules" (e.g., "denoise before diffuse") into the `AESTHETIC_PROMPT` in `ai.py`.
 - [ ] **KB-02**: Update `SKILL.md` to provide mentorship on *why* specific detail modules were chosen (noise management vs. structural sharpening).
+- [ ] **SYNC-01**: Update the `darktable-parity-sync` skill's "Industry Standard" references to include the new `clipping`, `ashift`, and `diffuse or sharpen` v5.4 specifications.
 
 ## Traceability
 
@@ -26,3 +27,4 @@
 | MOD-02 | Phase 2 | Pending |
 | KB-01 | Phase 3 | Pending |
 | KB-02 | Phase 3 | Pending |
+| SYNC-01 | Phase 3 | Pending |

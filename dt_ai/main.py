@@ -3,8 +3,8 @@ import os
 import json
 from dt_ai.discovery import discover_raw_files, get_neighboring_files, get_raw_metadata
 from dt_ai.processor import extract_preview
-from dt_ai.ai import AESTHETIC_PROMPT, parse_ai_response, synthesize_nudge
-from dt_ai.xmp import generate_variations
+from dt_ai.ai import AESTHETIC_PROMPT, parse_ai_response, synthesize_nudge, get_composition_prompt, get_aesthetic_prompt
+from dt_ai.xmp import generate_variations, generate_crop_previews
 from dt_ai.gui import open_in_darktable
 from dt_ai.state import load_state, save_state, get_state_path
 from dt_ai.research import get_subject_tips
@@ -120,7 +120,9 @@ def init_session(path):
 
 @cli.command()
 @click.argument('image_path', type=click.Path(exists=True))
-def agent_next(image_path):
+@click.option('--mode', type=click.Choice(['compose', 'aesthetic']), default='aesthetic')
+@click.option('--crop-rationale', default="")
+def agent_next(image_path, mode, crop_rationale):
     """Internal command: returns preview paths and the mentorship prompt."""
     abs_path = os.path.abspath(image_path)
     dir_path = os.path.dirname(abs_path)
@@ -142,9 +144,15 @@ def agent_next(image_path):
     # 3. Metadata Extraction
     metadata = get_and_validate_metadata(abs_path)
     
-    # 4. Build Payload for the Agent
+    # 4. Prompt Selection
+    if mode == 'compose':
+        prompt = get_composition_prompt()
+    else:
+        prompt = get_aesthetic_prompt(crop_rationale)
+    
+    # 5. Build Payload for the Agent
     payload = {
-        "prompt": AESTHETIC_PROMPT,
+        "prompt": prompt,
         "target_image": abs_path,
         "target_preview": target_preview,
         "neighbors": neighbors,
@@ -162,13 +170,19 @@ def agent_next(image_path):
 @cli.command()
 @click.argument('image_path', type=click.Path(exists=True))
 @click.argument('ai_result_json')
+@click.option('--mode', type=click.Choice(['crop-preview', 'aesthetic']), default='aesthetic')
 @click.option('--yolo', is_flag=True, help="Skip confirmation and apply edits immediately")
-def apply_variations(image_path, ai_result_json, yolo):
+def apply_variations(image_path, ai_result_json, mode, yolo):
     """Applies the AI-generated variations and saves the audit report."""
     abs_path = os.path.abspath(image_path)
     dir_path = os.path.dirname(abs_path)
     ai_result = json.loads(ai_result_json)
     
+    if mode == 'crop-preview':
+        versions = generate_crop_previews(abs_path, ai_result)
+        click.echo(json.dumps({"versions": versions}))
+        return
+
     # 1. Get metadata for hardware corrections and reporting
     metadata = get_raw_metadata(abs_path)
     

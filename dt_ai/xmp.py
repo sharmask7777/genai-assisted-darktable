@@ -25,11 +25,16 @@ LEGACY_MODULES = [
 
 # Preferred Modern Scene-Referred Modules
 MODERN_PIPELINE = [
+    "lens",
+    "cacorrect",
+    "denoiseprofile",
+    "demosaic",
     "exposure",
     "colorbalancergb",
     "colorcalibration",
     "sigmoid",
     "agx",
+    "diffuse",
 ]
 
 # Hardware-specific correction database
@@ -228,7 +233,89 @@ def get_agx_params(contrast: float = 1.0,
                        saturation, shadow_offset, *rotate, *purity, auto_tune)
     return data.hex()
 
-def add_history_item(root: ET.Element, operation: str, params: str, modversion: str, enabled: bool = True):
+def get_clipping_params(cx: float, cy: float, cw: float, ch: float, ratio_n: int = 0, ratio_d: int = 0) -> str:
+    """
+    Generates hex-encoded parameters for the 'clipping' v5 module.
+    Struct: angle (f), cx (f), cy (f), cw (f), ch (f), k_h (f), k_v (f), k_coords (8f), 
+            k_type (i), k_sym (i), k_apply (i), crop_auto (i), ratio_n (i), ratio_d (i)
+    Total size: 21 * 4 = 84 bytes.
+    """
+    angle = 0.0
+    k_h = 0.0
+    k_v = 0.0
+    k_coords = [0.0] * 8
+    k_type = 0
+    k_sym = 0
+    k_apply = 0
+    crop_auto = 0
+    
+    # Pack: 15 floats, then 6 ints
+    data = struct.pack('<15f6i', 
+                       angle, cx, cy, cw, ch, k_h, k_v, *k_coords,
+                       k_type, k_sym, k_apply, crop_auto, ratio_n, ratio_d)
+    return data.hex()
+
+def get_ashift_params(rotation: float = 0.0, guide: int = 0) -> str:
+    """
+    Generates hex-encoded parameters for the 'ashift' v5 module.
+    Struct: rotation (f), lensshift_v (f), lensshift_h (f), shear (f), aspect (f), 
+            clip (i), mirror_v (i), mirror_h (i), guide (i), focal (f), k (f), fit_mode (i)
+    Total size: 12 * 4 = 48 bytes.
+    """
+    lensshift_v = 0.0
+    lensshift_h = 0.0
+    shear = 0.0
+    aspect = 1.0 # 1.0 is default
+    clip = 1      # 1: largest area
+    mirror_v = 0
+    mirror_h = 0
+    focal = 0.0
+    k = 0.0
+    fit_mode = 0
+    
+    # Pack: 5 floats, 4 ints, 2 floats, 1 int
+    data = struct.pack('<5f4i2fi',
+                       rotation, lensshift_v, lensshift_h, shear, aspect,
+                       clip, mirror_v, mirror_h, guide, focal, k, fit_mode)
+    return data.hex()
+
+def get_diffuse_params(iterations: int = 10, radius: float = 0.0) -> str:
+    """
+    Generates hex-encoded parameters for the 'diffuse' module.
+    Struct: iterations (i), radius_central (f), radius_span (f), speed (4f), anisotropy (4f),
+            sharpness (f), edge_sensitivity (f), edge_threshold (f), luma_threshold (f),
+            regularization (f), mode (i)
+    Total size: 17 * 4 = 68 bytes.
+    """
+    radius_span = 0.0
+    speed = [0.0] * 4
+    anisotropy = [0.0] * 4
+    sharpness = 0.0
+    edge_sensitivity = 0.0
+    edge_threshold = 0.0
+    luma_threshold = 0.0
+    regularization = 0.0
+    mode = 0
+    
+    # Pack: 1 int, 14 floats, 1 int (Note: wait, iterations is int, mode is int)
+    # Correct mapping: i, f, f, 4f, 4f, f, f, f, f, f, i (Total 17 fields)
+    data = struct.pack('<i15fi',
+                       iterations, radius, radius_span, *speed, *anisotropy,
+                       sharpness, edge_sensitivity, edge_threshold, luma_threshold,
+                       regularization, mode)
+    return data.hex()
+
+def get_diffuse_preset_params(mode: str) -> str:
+    """Returns hex-encoded parameters for common diffuse presets."""
+    if mode == "denoise":
+        return get_diffuse_params(iterations=20, radius=0.0)
+    elif mode == "deblur":
+        return get_diffuse_params(iterations=40, radius=2.0)
+    elif mode == "sharpen":
+        return get_diffuse_params(iterations=10, radius=1.0)
+    return ""
+
+def add_history_item(root: ET.Element, operation: str, params: str, modversion: str, enabled: bool = True, multi_name: str = ""):
     """Injects a new processing module into the history stack with modern blendops."""
     # Specifically target the Seq inside darktable:history
     history_node = root.find(f".//{{{NS['darktable']}}}history")
@@ -246,14 +333,59 @@ def add_history_item(root: ET.Element, operation: str, params: str, modversion: 
         f"{{{NS['darktable']}}}enabled": "1" if enabled else "0",
         f"{{{NS['darktable']}}}modversion": modversion,
         f"{{{NS['darktable']}}}params": params,
-        f"{{{NS['darktable']}}}multi_name": "",
-        f"{{{NS['darktable']}}}multi_name_hand_edited": "0",
+        f"{{{NS['darktable']}}}multi_name": multi_name,
+        f"{{{NS['darktable']}}}multi_name_hand_edited": "1" if multi_name else "0",
         f"{{{NS['darktable']}}}multi_priority": "0",
         f"{{{NS['darktable']}}}blendop_version": "14",
         f"{{{NS['darktable']}}}blendop_params": "gz11eJxjYIAACQYYOOHEgAZY0QWAgBGLGANDgz0Ej1Q+dcF/IADRAGpyHQU=",
     }
     ET.SubElement(seq, f"{{{NS['rdf']}}}li", attribs)
     sync_history_end(root)
+
+def get_crop_preview_path(raw_path: str, crop_id: int) -> str:
+    """Returns the path for a temporary crop preview sidecar."""
+    base, ext = os.path.splitext(raw_path)
+    return f"{base}_crop{crop_id}{ext}.xmp"
+
+def generate_crop_previews(raw_path: str, crop_suggestions: dict) -> List[str]:
+    """Generates temporary XMP sidecars for each crop suggestion."""
+    generated = []
+    options = crop_suggestions.get("options", [])
+    
+    for opt in options:
+        crop_id = opt.get("id")
+        params = opt.get("params", {})
+        if not crop_id or not params:
+            continue
+            
+        target_path = get_crop_preview_path(raw_path, crop_id)
+        
+        # Start with a clean skeleton or clone base
+        base_xmp = f"{raw_path}.xmp"
+        if os.path.exists(base_xmp):
+            root = load_xmp(base_xmp)
+        else:
+            root = generate_skeleton()
+            
+        # 1. Apply Clipping (Crop)
+        clip_hex = get_clipping_params(
+            cx=params.get("cx", 0.0),
+            cy=params.get("cy", 0.0),
+            cw=params.get("cw", 1.0),
+            ch=params.get("ch", 1.0)
+        )
+        add_history_item(root, "clipping", clip_hex, "5")
+        
+        # 2. Apply Ashift (Rotation)
+        ashift_hex = get_ashift_params(
+            rotation=params.get("rotation", 0.0)
+        )
+        add_history_item(root, "ashift", ashift_hex, "5")
+        
+        write_xmp(root, target_path)
+        generated.append(target_path)
+        
+    return generated
 
 def generate_variations(raw_path: str, ai_result: dict, metadata: dict = None) -> List[str]:
     """Generates Darktable version sidecars based on all AI variations provided."""
@@ -272,17 +404,31 @@ def generate_variations(raw_path: str, ai_result: dict, metadata: dict = None) -
         
         root = load_xmp(target_path)
         
-        # Inject Exposure (including hardware black offset)
+        # 1. Base Optical Fixes
+        add_history_item(root, "lens", "", "1") # Default lens correction
+        add_history_item(root, "cacorrect", "0000000002000000", "1") # Default CA
+        
+        # 2. Cleaning (Denoise)
+        add_history_item(root, "denoiseprofile", "", "1") # Auto-profiled denoise
+        
+        # 3. Inject Exposure (including hardware black offset)
         exp_hex = get_exposure_params(
             ev=params.get("exposure", 0.0),
             black=params.get("black", 0.0) + hw["black_offset"]
         )
         add_history_item(root, "exposure", exp_hex, "6")
         
-        # Inject Temperature (Note: Future phases can use hw['green_gain'] / hw['red_gain'])
+        # 4. Inject Temperature
         add_history_item(root, "temperature", get_temperature_params(params.get("kelvin", 5500.0)), "3")
         
-        # Inject AgX or Sigmoid (Tone mapping)
+        # 5. Surgical Detail (Diffuse or Sharpen)
+        diffuse_mode = params.get("diffuse_mode")
+        if diffuse_mode and diffuse_mode != "none":
+            diff_hex = get_diffuse_preset_params(diffuse_mode)
+            if diff_hex:
+                add_history_item(root, "diffuse", diff_hex, "2", multi_name=diffuse_mode)
+        
+        # 6. Inject AgX or Sigmoid (Tone mapping)
         if "agx_contrast" in params or "agx_saturation" in params:
             agx_hex = get_agx_params(
                 contrast=params.get("agx_contrast", 1.0),
