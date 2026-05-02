@@ -28,13 +28,17 @@ Initialize the parity sync environment and perform a full codebase analysis of `
 ### 2. External Parity Research
 Conduct research using web search, official Darktable blogs, and the primary GitHub repository to identify:
 - New modules (e.g., AgX, Capture Sharpness).
-- Current version numbers for `clipping`, `ashift`, and `diffuse or sharpen`.
-- Industry best practices for RAW editing in 2026.
+- Current version numbers and binary structure changes for `clipping`, `ashift` (Rotate and Perspective), and `diffuse or sharpen`.
+- Updates to "Rotate and Perspective" (ashift) math, specifically how focal length and crop factor influence the homography matrix.
+- Industry best practices for RAW editing in 2026, including intelligent auto-crop logic.
 
 ### 3. Parity Audit & Gap Analysis
 Generate a structured `REPORT.md` in the progress directory:
 - **Gap Analysis Table**: Current State vs. Industry Standard.
-- **Module Version Check**: Verify `clipping` (v5), `ashift` (v5), and `diffuse` (v2) struct offsets.
+- **Module Version Check**: Verify `clipping` (v5), `ashift` (v5 - 892 bytes), and `diffuse` (v2) struct offsets and compression markers (e.g., `gz16`).
+- **Geometric Logic Audit**:
+    - Verify `ashift` rotation math remains aligned with Darktable's coordinate system.
+    - Validate `crop` (clipping) coordinate mapping (0.0 to 1.0) and boundary safety.
 - **Sequence Check**: Ensure the "Denoise-before-Sharpen" pipeline order is enforced in `xmp.py`.
 - **Knowledge Base Audit**: 
     - Iterate through all leaf nodes in `.agents/knowledge-base/`.
