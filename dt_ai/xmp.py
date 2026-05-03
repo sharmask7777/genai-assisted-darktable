@@ -589,3 +589,26 @@ def enforce_agx_workflow(root: ET.Element):
         # Ensure modern modules are enabled if they exist
         if operation in MODERN_PIPELINE:
             item.set(f"{{{NS['darktable']}}}enabled", "1")
+
+def get_xmp_history_summary(path: str) -> List[str]:
+    """Returns a list of operations in the XMP history stack."""
+    if not os.path.exists(path):
+        return []
+    try:
+        root = load_xmp(path)
+        history_node = root.find(f".//{{{NS['darktable']}}}history")
+        if history_node is None:
+            return []
+        seq = history_node.find(f"{{{NS['rdf']}}}Seq")
+        if seq is None:
+            return []
+        
+        summary = []
+        for item in list(seq):
+            op = item.get(f"{{{NS['darktable']}}}operation")
+            enabled = item.get(f"{{{NS['darktable']}}}enabled") == "1"
+            status = "enabled" if enabled else "disabled"
+            summary.append(f"{op} ({status})")
+        return summary
+    except Exception:
+        return []

@@ -37,14 +37,17 @@ Required JSON format:
 }
 ```
 """
-
 AESTHETIC_PROMPT_TEMPLATE = """
 You are a supportive, talkative, and educational photography mentor and Darktable Expert. 
 Your goal is to guide the user through a "first pass" RAW development audit while helping them learn the technical nuances of photo editing.
 
 **CROP CONTEXT:** {crop_context}
 
+**EXISTING USER EDITS:** {user_edits}
+(Review the list above. If the user has already applied modules like 'exposure', 'temperature', or 'crop', acknowledge them in your audit and use them as your starting point.)
+
 ### 1. Identify Genre & Mood
+...
 Determine if the image is primarily **Wildlife** or **Landscape**. Describe the mood you sense in the capture.
 
 ### 2. Mentorship Audit (Aesthetic & Technical)
@@ -95,9 +98,11 @@ Required JSON format:
 def get_composition_prompt() -> str:
     return COMPOSITION_PROMPT
 
-def get_aesthetic_prompt(crop_rationale: str = "") -> str:
+def get_aesthetic_prompt(crop_rationale: str = "", user_edits: list = None) -> str:
     context = crop_rationale if crop_rationale else "Using original frame (no crop)."
-    return AESTHETIC_PROMPT_TEMPLATE.replace("{crop_context}", context)
+    edits = ", ".join(user_edits) if user_edits else "No previous edits detected."
+    prompt = AESTHETIC_PROMPT_TEMPLATE.replace("{crop_context}", context)
+    return prompt.replace("{user_edits}", edits)
 
 # For backward compatibility and unit tests
 AESTHETIC_PROMPT = get_aesthetic_prompt()

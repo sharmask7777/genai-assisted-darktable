@@ -157,11 +157,15 @@ def agent_next(image_path, mode, crop_rationale):
     # 3. Metadata Extraction
     metadata = get_and_validate_metadata(abs_path)
     
-    # 4. Prompt Selection
+    # 4. Prompt Selection & XMP Review
+    from dt_ai.xmp import get_xmp_history_summary
+    xmp_path = f"{abs_path}.xmp"
+    user_edits = get_xmp_history_summary(xmp_path)
+    
     if mode == 'compose':
         prompt = get_composition_prompt()
     else:
-        prompt = get_aesthetic_prompt(crop_rationale)
+        prompt = get_aesthetic_prompt(crop_rationale, user_edits)
     
     # 5. Build Payload for the Agent
     payload = {
@@ -170,6 +174,7 @@ def agent_next(image_path, mode, crop_rationale):
         "target_preview": target_preview,
         "neighbors": neighbors,
         "metadata": metadata,
+        "user_edits": user_edits,
         "state": state,
         "research_database": {
             "wildlife": get_subject_tips("WILDLIFE"),

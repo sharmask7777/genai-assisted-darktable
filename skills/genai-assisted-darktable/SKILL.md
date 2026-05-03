@@ -32,6 +32,7 @@ This SOP transforms your photo-editing session into a mentorship experience. I w
 - **Action**: Ask the user: "Which image would you like to tinker with next?"
 
 ### 4. Aesthetic Mentorship
+- **XMP Review**: Before suggesting variations, you MUST check the existing `.xmp` sidecar for the target image to identify any manual edits (e.g., exposure, white balance, cropping) the user has already performed. Incorporate this "Starting Point" into your audit.
 - **Action**: Call `uv run dt-ai agent-next <image_path> --mode aesthetic`.
 - **Research Depth Choice**: 
     - Ask the user: "I'm ready to research the best aesthetic for this image. Should I do a **Shallow Research** (consult my local expert Knowledge Base) or **Deep Research** (search the internet for new creative ideas)?"
