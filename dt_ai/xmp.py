@@ -175,8 +175,24 @@ def encode_params(values: List[float]) -> str:
     return binary_data.hex()
 
 def get_exposure_params(ev: float, black: float = 0.0) -> str:
-    """Generates hex-encoded parameters for the 'exposure' v6 module."""
-    return encode_params([0.0, black, ev, 0.5, 0.0]) # mode=0, black, ev, percentile, target
+    """
+    Generates hex-encoded parameters for the 'exposure' v7 module.
+    Struct: mode (i), black (f), exposure (f), deflicker_percentile (f),
+            deflicker_target_level (f), compensate_exposure_bias (i),
+            compensate_hilite_pres (i)
+    Total size: 7 * 4 = 28 bytes.
+    """
+    mode = 0 # EXPOSURE_MODE_MANUAL
+    deflicker_percentile = 50.0
+    deflicker_target_level = -4.0
+    compensate_exposure_bias = 1 # TRUE
+    compensate_hilite_pres = 1   # TRUE
+    
+    data = struct.pack('<iffffii', 
+                       mode, black, ev, deflicker_percentile, 
+                       deflicker_target_level, compensate_exposure_bias, 
+                       compensate_hilite_pres)
+    return data.hex()
 
 def get_camera_wb(root: ET.Element) -> List[float]:
     """Extracts raw WB coefficients from the first temperature module found in history."""
@@ -535,58 +551,56 @@ def generate_variations(raw_path: str, ai_result: dict, metadata: dict = None) -
         
         root = load_xmp(target_path)
         
-        # 1. Base Optical Fixes
+        # 1. Base Optical Fixes (Smart Update - usually one instance)
         set_history_item(root, "lens", "", "1") # Default lens correction
         set_history_item(root, "cacorrect", "0000000002000000", "1") # Default CA
         
         # 2. Cleaning (Denoise)
         set_history_item(root, "denoiseprofile", "", "1") # Auto-profiled denoise
         
-        # 3. Inject Exposure (including hardware black offset and a +0.5 baseline boost for scene-referred)
-        # We add 0.5 to the AI's suggestion to ensure the first pass isn't too dark.
-        base_exposure = params.get("exposure", 0.0) + 0.5
-        exp_hex = get_exposure_params(
-            ev=base_exposure,
-            black=params.get("black", 0.0) + hw["black_offset"]
-        )
-        set_history_item(root, "exposure", exp_hex, "6")
+        # 3. AI Refinement Layer (Multi-Instance)
+        # We ADD a new exposure module instead of overwriting the user's primary one.
+        # This prevents 'black screen' errors and layers the AI boost on top of user edits.
+        ai_exp = params.get("exposure", 0.0) + 0.5 # Mandatory baseline boost
+        exp_hex = get_exposure_params(ev=ai_exp, black=hw["black_offset"])
+        add_history_item(root, "exposure", exp_hex, "7", multi_name="ai_refinement")
         
-        # 4. Inject Temperature (Using base_wb to prevent green/blue shifts)
+        # 4. Temperature Refinement (Relative shift)
         set_history_item(root, "temperature", get_temperature_params(
             kelvin=params.get("kelvin", 5500.0),
             tint=params.get("tint", 1.0),
             base_wb=base_wb
-        ), "3")
+        ), "4")
         
-        # 5. Surgical Detail (Diffuse or Sharpen)
+        # 5. Surgical Detail (Multi-Instance)
         diffuse_mode = params.get("diffuse_mode")
         if diffuse_mode and diffuse_mode != "none":
             diff_hex = get_diffuse_preset_params(diffuse_mode)
             if diff_hex:
-                set_history_item(root, "diffuse", diff_hex, "2", multi_name=diffuse_mode)
+                add_history_item(root, "diffuse", diff_hex, "2", multi_name=f"ai_{diffuse_mode}")
         
-        # 6. Inject AgX or Sigmoid (Tone mapping)
-        if "agx_contrast" in params or "agx_saturation" in params:
-            agx_hex = get_agx_params(
-                contrast=params.get("agx_contrast", 1.0),
-                saturation=params.get("agx_saturation", 1.0)
-            )
-            # Inherit existing modversion if available for AgX to avoid "rejected" errors
-            set_history_item(root, "agx", agx_hex, None)
-        else:
-            # Fallback to Sigmoid
-            sig_hex = get_sigmoid_params(
-                contrast=params.get("contrast", 1.5),
-                skew=params.get("skew", 0.0),
-                attenuation=params.get("attenuation"),
-                rotation=params.get("rotation")
-            )
-            set_history_item(root, "sigmoid", sig_hex, "3")
+        # 6. Tone Mapping Preservation
+        # If the user ALREADY has AgX or Sigmoid, we DO NOT touch them to avoid version conflicts.
+        # Only inject if they are missing from the history.
+        history_summary = [li.get(f"{{{NS['darktable']}}}operation") for li in root.findall(f".//{{{NS['darktable']}}}history/{{{NS['rdf']}}}Seq/{{{NS['rdf']}}}li")]
         
-        # 7. Inject Rotation (Ashift)
+        if "agx" not in history_summary and "sigmoid" not in history_summary:
+            if "agx_contrast" in params or "agx_saturation" in params:
+                agx_hex = get_agx_params(
+                    contrast=params.get("agx_contrast", 1.0),
+                    saturation=params.get("agx_saturation", 1.0)
+                )
+                add_history_item(root, "agx", agx_hex, "1")
+            else:
+                sig_hex = get_sigmoid_params(
+                    contrast=params.get("contrast", 1.5),
+                    skew=params.get("skew", 0.0)
+                )
+                add_history_item(root, "sigmoid", sig_hex, "3")
+        
+        # 7. Rotation Preservation
         rot_val = params.get("rotation", 0.0)
         if abs(rot_val) > 0.001:
-            if abs(rot_val) > 180: rot_val = 0.0
             ashift_hex = get_ashift_params(
                 rotation=rot_val, 
                 focal_length=float(metadata.get("focal_length", 28.0)), 
@@ -594,7 +608,7 @@ def generate_variations(raw_path: str, ai_result: dict, metadata: dict = None) -
             )
             set_history_item(root, "ashift", ashift_hex, "5")
         
-        # Enforce modern workflow (disables legacy, ensures AgX-compatibility)
+        # Enforce modern workflow (disables legacy)
         enforce_agx_workflow(root)
         
         write_xmp(root, target_path)
