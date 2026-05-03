@@ -35,6 +35,17 @@ MODERN_PIPELINE = [
     "sigmoid",
     "agx",
     "diffuse",
+    "crop",
+    "clipping",
+    "ashift",
+    "rotatepixels",
+    "flip",
+    "temperature",
+    "rawprepare",
+    "colorin",
+    "colorout",
+    "gamma",
+    "highlights",
 ]
 
 # Hardware-specific correction database
@@ -365,9 +376,11 @@ def get_diffuse_preset_params(mode: str) -> str:
         return get_diffuse_params(iterations=10, radius=1.0)
     return ""
 
-def add_history_item(root: ET.Element, operation: str, params: str, modversion: str, enabled: bool = True, multi_name: str = ""):
-    """Injects a new processing module into the history stack with modern blendops."""
-    # Specifically target the Seq inside darktable:history
+def set_history_item(root: ET.Element, operation: str, params: str, modversion: str = None, enabled: bool = True, multi_name: str = ""):
+    """
+    Updates an existing processing module in the history stack or appends a new one.
+    If modversion is None, it tries to inherit it from the existing module.
+    """
     history_node = root.find(f".//{{{NS['darktable']}}}history")
     if history_node is None:
         raise RuntimeError("Could not find darktable:history in XMP")
@@ -376,21 +389,43 @@ def add_history_item(root: ET.Element, operation: str, params: str, modversion: 
     if seq is None:
         raise RuntimeError("Could not find rdf:Seq inside darktable:history")
         
-    num = len(list(seq))
-    attribs = {
-        f"{{{NS['darktable']}}}num": str(num),
-        f"{{{NS['darktable']}}}operation": operation,
-        f"{{{NS['darktable']}}}enabled": "1" if enabled else "0",
-        f"{{{NS['darktable']}}}modversion": modversion,
-        f"{{{NS['darktable']}}}params": params,
-        f"{{{NS['darktable']}}}multi_name": multi_name,
-        f"{{{NS['darktable']}}}multi_name_hand_edited": "1" if multi_name else "0",
-        f"{{{NS['darktable']}}}multi_priority": "0",
-        f"{{{NS['darktable']}}}blendop_version": "14",
-        f"{{{NS['darktable']}}}blendop_params": "gz11eJxjYIAACQYYOOHEgAZY0QWAgBGLGANDgz0Ej1Q+dcF/IADRAGpyHQU=",
-    }
-    ET.SubElement(seq, f"{{{NS['rdf']}}}li", attribs)
-    sync_history_end(root)
+    # Find existing instance (Searching backwards to find the most recent one)
+    found_item = None
+    items = list(seq)
+    for item in reversed(items):
+        if item.get(f"{{{NS['darktable']}}}operation") == operation and \
+           item.get(f"{{{NS['darktable']}}}multi_name") == multi_name:
+            found_item = item
+            break
+            
+    if found_item is not None:
+        # Update existing
+        found_item.set(f"{{{NS['darktable']}}}params", params)
+        found_item.set(f"{{{NS['darktable']}}}enabled", "1" if enabled else "0")
+        if modversion:
+            found_item.set(f"{{{NS['darktable']}}}modversion", modversion)
+        # If modversion is None, we keep the existing one (Inheritance)
+    else:
+        # Append new
+        num = len(items)
+        attribs = {
+            f"{{{NS['darktable']}}}num": str(num),
+            f"{{{NS['darktable']}}}operation": operation,
+            f"{{{NS['darktable']}}}enabled": "1" if enabled else "0",
+            f"{{{NS['darktable']}}}modversion": modversion or "1",
+            f"{{{NS['darktable']}}}params": params,
+            f"{{{NS['darktable']}}}multi_name": multi_name,
+            f"{{{NS['darktable']}}}multi_name_hand_edited": "1" if multi_name else "0",
+            f"{{{NS['darktable']}}}multi_priority": "0",
+            f"{{{NS['darktable']}}}blendop_version": "14",
+            f"{{{NS['darktable']}}}blendop_params": "gz11eJxjYIAACQYYOOHEgAZY0QWAgBGLGANDgz0Ej1Q+dcF/IADRAGpyHQU=",
+        }
+        ET.SubElement(seq, f"{{{NS['rdf']}}}li", attribs)
+        sync_history_end(root)
+
+def add_history_item(root: ET.Element, operation: str, params: str, modversion: str, enabled: bool = True, multi_name: str = ""):
+    """Legacy wrapper for set_history_item (always appends)."""
+    set_history_item(root, operation, params, modversion, enabled, multi_name)
 
 def get_crop_preview_path(raw_path: str, crop_id: int) -> str:
     """Returns the path for a temporary crop preview sidecar using standard Darktable versioning."""
@@ -437,7 +472,7 @@ def generate_crop_previews(raw_path: str, crop_suggestions: dict, metadata: dict
         height = min(ai_ch, 1.0 - top)
 
         crop_hex = get_crop_params(left, top, width, height)
-        add_history_item(root, "crop", crop_hex, "3")
+        set_history_item(root, "crop", crop_hex, "3")
         
         # 2. Ashift (Rotation) is COMPLETELY REMOVED to prevent UI errors
         
@@ -501,11 +536,11 @@ def generate_variations(raw_path: str, ai_result: dict, metadata: dict = None) -
         root = load_xmp(target_path)
         
         # 1. Base Optical Fixes
-        add_history_item(root, "lens", "", "1") # Default lens correction
-        add_history_item(root, "cacorrect", "0000000002000000", "1") # Default CA
+        set_history_item(root, "lens", "", "1") # Default lens correction
+        set_history_item(root, "cacorrect", "0000000002000000", "1") # Default CA
         
         # 2. Cleaning (Denoise)
-        add_history_item(root, "denoiseprofile", "", "1") # Auto-profiled denoise
+        set_history_item(root, "denoiseprofile", "", "1") # Auto-profiled denoise
         
         # 3. Inject Exposure (including hardware black offset and a +0.5 baseline boost for scene-referred)
         # We add 0.5 to the AI's suggestion to ensure the first pass isn't too dark.
@@ -514,10 +549,10 @@ def generate_variations(raw_path: str, ai_result: dict, metadata: dict = None) -
             ev=base_exposure,
             black=params.get("black", 0.0) + hw["black_offset"]
         )
-        add_history_item(root, "exposure", exp_hex, "6")
+        set_history_item(root, "exposure", exp_hex, "6")
         
         # 4. Inject Temperature (Using base_wb to prevent green/blue shifts)
-        add_history_item(root, "temperature", get_temperature_params(
+        set_history_item(root, "temperature", get_temperature_params(
             kelvin=params.get("kelvin", 5500.0),
             tint=params.get("tint", 1.0),
             base_wb=base_wb
@@ -528,7 +563,7 @@ def generate_variations(raw_path: str, ai_result: dict, metadata: dict = None) -
         if diffuse_mode and diffuse_mode != "none":
             diff_hex = get_diffuse_preset_params(diffuse_mode)
             if diff_hex:
-                add_history_item(root, "diffuse", diff_hex, "2", multi_name=diffuse_mode)
+                set_history_item(root, "diffuse", diff_hex, "2", multi_name=diffuse_mode)
         
         # 6. Inject AgX or Sigmoid (Tone mapping)
         if "agx_contrast" in params or "agx_saturation" in params:
@@ -536,7 +571,8 @@ def generate_variations(raw_path: str, ai_result: dict, metadata: dict = None) -
                 contrast=params.get("agx_contrast", 1.0),
                 saturation=params.get("agx_saturation", 1.0)
             )
-            add_history_item(root, "agx", agx_hex, "1")
+            # Inherit existing modversion if available for AgX to avoid "rejected" errors
+            set_history_item(root, "agx", agx_hex, None)
         else:
             # Fallback to Sigmoid
             sig_hex = get_sigmoid_params(
@@ -545,7 +581,7 @@ def generate_variations(raw_path: str, ai_result: dict, metadata: dict = None) -
                 attenuation=params.get("attenuation"),
                 rotation=params.get("rotation")
             )
-            add_history_item(root, "sigmoid", sig_hex, "3")
+            set_history_item(root, "sigmoid", sig_hex, "3")
         
         # 7. Inject Rotation (Ashift)
         rot_val = params.get("rotation", 0.0)
@@ -556,7 +592,7 @@ def generate_variations(raw_path: str, ai_result: dict, metadata: dict = None) -
                 focal_length=float(metadata.get("focal_length", 28.0)), 
                 crop_factor=float(metadata.get("crop_factor", hw["crop_factor"]))
             )
-            add_history_item(root, "ashift", ashift_hex, "5")
+            set_history_item(root, "ashift", ashift_hex, "5")
         
         # Enforce modern workflow (disables legacy, ensures AgX-compatibility)
         enforce_agx_workflow(root)
