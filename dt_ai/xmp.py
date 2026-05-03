@@ -507,9 +507,11 @@ def generate_variations(raw_path: str, ai_result: dict, metadata: dict = None) -
         # 2. Cleaning (Denoise)
         add_history_item(root, "denoiseprofile", "", "1") # Auto-profiled denoise
         
-        # 3. Inject Exposure (including hardware black offset)
+        # 3. Inject Exposure (including hardware black offset and a +0.5 baseline boost for scene-referred)
+        # We add 0.5 to the AI's suggestion to ensure the first pass isn't too dark.
+        base_exposure = params.get("exposure", 0.0) + 0.5
         exp_hex = get_exposure_params(
-            ev=params.get("exposure", 0.0),
+            ev=base_exposure,
             black=params.get("black", 0.0) + hw["black_offset"]
         )
         add_history_item(root, "exposure", exp_hex, "6")

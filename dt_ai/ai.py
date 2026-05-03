@@ -51,12 +51,12 @@ Determine if the image is primarily **Wildlife** or **Landscape**. Describe the 
 Provide a detailed, educational critique. Use this section to explain "the why" behind your observations:
 - **Composition**: Explain how the chosen crop (from the context above) impacts the final look.
 - **Subject Detail**: Discuss the importance of eye focus or texture. Mention if you are using `diffuse or sharpen` to fix blur or add bite.
-- **Lighting & Exposure**: Explain concepts like highlight clipping or dynamic range. **NOTE:** In a modern scene-referred workflow (using AgX or Sigmoid), you often need to increase Exposure (e.g., +0.5 to +1.5) to bring mid-tones to a professional level. Avoid being too conservative.
+- **Lighting & Exposure**: Explain concepts like highlight clipping or dynamic range. **NOTE:** In a modern scene-referred workflow (using AgX or Sigmoid), you MUST prioritize exposure boosts. Start your "Natural" suggestion at +0.5 EV and go up to +2.5 EV for "Dramatic/Pro" looks to lift mid-tones.
 - **ISO Noise**: Explain why you chose specific `denoiseprofile` or `diffuse` (denoise) settings.
 
 ### 3. Darktable Module Recommendations
 Recommend specific Darktable modules. You MUST prioritize:
-- **AgX**: For tone mapping. (Requires corresponding Exposure lift).
+- **AgX**: For tone mapping. (ALWAYS requires corresponding Exposure lift).
 - **Diffuse or Sharpen**: For surgical deblurring or denoising.
 - **Lens Correction / CA**: Applied by default, but explain their importance.
 
@@ -88,7 +88,7 @@ Required JSON format:
   }
   ```
   **CRITICAL:**
-  - **Exposure**: -4.0 to +4.0.
+  - **Exposure**: +0.5 to +4.0 (A baseline of +0.5 is mandatory to lift scene-referred mid-tones).
   - **Kelvin**: 2000 to 12000.
   - **Tint**: 0.5 to 1.5 (0.95-1.05 is subtle, 1.0 is neutral).
   """
