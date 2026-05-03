@@ -167,19 +167,50 @@ def get_exposure_params(ev: float, black: float = 0.0) -> str:
     """Generates hex-encoded parameters for the 'exposure' v6 module."""
     return encode_params([0.0, black, ev, 0.5, 0.0]) # mode=0, black, ev, percentile, target
 
-def get_temperature_params(kelvin: float, tint: float = 1.0) -> str:
-    """Generates hex-encoded parameters for the 'temperature' v3 module."""
-    # Using a much safer neutral baseline (1.0) instead of aggressive guesses.
-    # Higher Kelvin (10000) = cooler/bluer (lower red ratio)
-    # Lower Kelvin (2000) = warmer/redder (higher red ratio)
+def get_camera_wb(root: ET.Element) -> List[float]:
+    """Extracts raw WB coefficients from the first temperature module found in history."""
+    # Sane fallback (approx Canon/Sony neutral: ~2.0, 1.0, 1.5, 1.0)
+    fallback = [2.0, 1.0, 1.5, 1.0]
+    
+    history_node = root.find(f".//{{{NS['darktable']}}}history")
+    if history_node is None:
+        return fallback
+        
+    seq = history_node.find(f"{{{NS['rdf']}}}Seq")
+    if seq is None:
+        return fallback
+            
+    for item in list(seq):
+        if item.get(f"{{{NS['darktable']}}}operation") == "temperature":
+            params_hex = item.get(f"{{{NS['darktable']}}}params")
+            if params_hex:
+                try:
+                    # Decode hex to binary then unpack 4 floats
+                    binary_data = bytes.fromhex(params_hex)
+                    if len(binary_data) >= 16:
+                        return list(struct.unpack('<ffff', binary_data[:16]))
+                except Exception:
+                    pass
+    return fallback
+
+def get_temperature_params(kelvin: float, tint: float = 1.0, base_wb: List[float] = None) -> str:
+    """
+    Generates hex-encoded parameters for the 'temperature' v3 module.
+    Applies Kelvin and Tint as relative shifts to the base_wb coefficients.
+    """
+    base_wb = base_wb or [2.0, 1.0, 1.5, 1.0]
+    
+    # Kelvin shift relative to 5500K (Daylight)
+    # This is a simplification but works well for relative shifts
     base_kelvin = 5500.0
     ratio = base_kelvin / kelvin
     
-    # We use a very gentle curve to avoid the "incredible red" cast
-    red = 1.0 * ratio
-    blue = 1.0 / ratio
-    green = 1.0 * tint
+    # Apply shifts to existing coefficients
+    red = base_wb[0] * ratio
+    green = base_wb[1] * tint
+    blue = base_wb[2] * (1.0 / ratio)
     
+    # Darktable 4-float format: R, G, B, G
     data = struct.pack('<ffff', red, green, blue, green)
     return data.hex()
 
@@ -451,6 +482,16 @@ def generate_variations(raw_path: str, ai_result: dict, metadata: dict = None) -
     # Calculate hardware offsets once per image
     hw = apply_hardware_corrections(metadata)
     
+    # Extract baseline White Balance from the original sidecar if it exists
+    base_wb = [2.0, 1.0, 1.5, 1.0] # Fallback
+    base_xmp = f"{raw_path}.xmp"
+    if os.path.exists(base_xmp):
+        try:
+            base_root = load_xmp(base_xmp)
+            base_wb = get_camera_wb(base_root)
+        except Exception:
+            pass
+    
     for style, params in variations.items():
         if not params: continue
         
@@ -473,10 +514,11 @@ def generate_variations(raw_path: str, ai_result: dict, metadata: dict = None) -
         )
         add_history_item(root, "exposure", exp_hex, "6")
         
-        # 4. Inject Temperature
+        # 4. Inject Temperature (Using base_wb to prevent green/blue shifts)
         add_history_item(root, "temperature", get_temperature_params(
             kelvin=params.get("kelvin", 5500.0),
-            tint=params.get("tint", 1.0)
+            tint=params.get("tint", 1.0),
+            base_wb=base_wb
         ), "3")
         
         # 5. Surgical Detail (Diffuse or Sharpen)
