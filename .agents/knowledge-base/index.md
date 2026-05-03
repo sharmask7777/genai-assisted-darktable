@@ -26,6 +26,7 @@ This index serves as the primary entry point for the `dt-ai` intelligent researc
 | **Indian Wildlife**| High ISO Safari (3200+) techniques for Indian parks (Nagarhole). | `niche/indian-wildlife.md` |
 | **Indian Pond Heron**| Breeding plumage (maroon/buff) preservation and "flash" wing exposure. | `niche/indian-pond-heron.md` |
 | **Greater Coucal**  | Ruby eye preservation, copper wing enrichment, and glossy black handling. | `niche/greater-coucal.md` |
+| **Asian Green Bee-eater**| Emerald iridescence, blue throat accents, and red eye sharpness. | `niche/asian-green-bee-eater.md` |
 
 ---
 *Last updated: 2026-05-02*
