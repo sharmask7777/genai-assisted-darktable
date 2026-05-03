@@ -222,13 +222,14 @@ def get_camera_wb(root: ET.Element) -> List[float]:
 
 def get_temperature_params(kelvin: float, tint: float = 1.0, base_wb: List[float] = None) -> str:
     """
-    Generates hex-encoded parameters for the 'temperature' v3 module.
+    Generates hex-encoded parameters for the 'temperature' v4 module.
     Applies Kelvin and Tint as relative shifts to the base_wb coefficients.
+    Struct: red (f), green (f), blue (f), extra (f), intent (i)
+    Total size: 5 * 4 = 20 bytes.
     """
     base_wb = base_wb or [2.0, 1.0, 1.5, 1.0]
     
     # Kelvin shift relative to 5500K (Daylight)
-    # This is a simplification but works well for relative shifts
     base_kelvin = 5500.0
     ratio = base_kelvin / kelvin
     
@@ -237,8 +238,8 @@ def get_temperature_params(kelvin: float, tint: float = 1.0, base_wb: List[float
     green = base_wb[1] * tint
     blue = base_wb[2] * (1.0 / ratio)
     
-    # Darktable 4-float format: R, G, B, G
-    data = struct.pack('<ffff', red, green, blue, green)
+    # 20-byte format: R, G, B, G (usually identical), Intent (3 is a safe default)
+    data = struct.pack('<ffffi', red, green, blue, green, 3)
     return data.hex()
 
 def get_sigmoid_params(contrast: float = 1.5, 
