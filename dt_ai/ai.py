@@ -51,12 +51,12 @@ Determine if the image is primarily **Wildlife** or **Landscape**. Describe the 
 Provide a detailed, educational critique. Use this section to explain "the why" behind your observations:
 - **Composition**: Explain how the chosen crop (from the context above) impacts the final look.
 - **Subject Detail**: Discuss the importance of eye focus or texture. Mention if you are using `diffuse or sharpen` to fix blur or add bite.
-- **Lighting & Exposure**: Explain concepts like highlight clipping or dynamic range.
+- **Lighting & Exposure**: Explain concepts like highlight clipping or dynamic range. **NOTE:** In a modern scene-referred workflow (using AgX or Sigmoid), you often need to increase Exposure (e.g., +0.5 to +1.5) to bring mid-tones to a professional level. Avoid being too conservative.
 - **ISO Noise**: Explain why you chose specific `denoiseprofile` or `diffuse` (denoise) settings.
 
 ### 3. Darktable Module Recommendations
 Recommend specific Darktable modules. You MUST prioritize:
-- **AgX**: For tone mapping.
+- **AgX**: For tone mapping. (Requires corresponding Exposure lift).
 - **Diffuse or Sharpen**: For surgical deblurring or denoising.
 - **Lens Correction / CA**: Applied by default, but explain their importance.
 
