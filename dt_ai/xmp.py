@@ -167,7 +167,7 @@ def get_exposure_params(ev: float, black: float = 0.0) -> str:
     """Generates hex-encoded parameters for the 'exposure' v6 module."""
     return encode_params([0.0, black, ev, 0.5, 0.0]) # mode=0, black, ev, percentile, target
 
-def get_temperature_params(kelvin: float) -> str:
+def get_temperature_params(kelvin: float, tint: float = 1.0) -> str:
     """Generates hex-encoded parameters for the 'temperature' v3 module."""
     # Using a much safer neutral baseline (1.0) instead of aggressive guesses.
     # Higher Kelvin (10000) = cooler/bluer (lower red ratio)
@@ -178,7 +178,7 @@ def get_temperature_params(kelvin: float) -> str:
     # We use a very gentle curve to avoid the "incredible red" cast
     red = 1.0 * ratio
     blue = 1.0 / ratio
-    green = 1.0
+    green = 1.0 * tint
     
     data = struct.pack('<ffff', red, green, blue, green)
     return data.hex()
@@ -474,7 +474,10 @@ def generate_variations(raw_path: str, ai_result: dict, metadata: dict = None) -
         add_history_item(root, "exposure", exp_hex, "6")
         
         # 4. Inject Temperature
-        add_history_item(root, "temperature", get_temperature_params(params.get("kelvin", 5500.0)), "3")
+        add_history_item(root, "temperature", get_temperature_params(
+            kelvin=params.get("kelvin", 5500.0),
+            tint=params.get("tint", 1.0)
+        ), "3")
         
         # 5. Surgical Detail (Diffuse or Sharpen)
         diffuse_mode = params.get("diffuse_mode")

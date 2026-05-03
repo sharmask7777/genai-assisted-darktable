@@ -74,23 +74,24 @@ Required JSON format:
   "audit": "Your full audit text here",
   "recommendations": ["exposure", "agx", "diffuse", "denoiseprofile"],
   "variations": {
-    "natural": {
-        "exposure": float, 
-        "kelvin": float, 
-        "agx_contrast": float, 
-        "agx_saturation": float,
-        "diffuse_mode": "none|denoise|deblur|sharpen"
-    },
-    "dramatic": { ... },
-    "pro_research": { ... }
+  "natural": {
+      "exposure": float, 
+      "kelvin": float, 
+      "tint": float,
+      "agx_contrast": float, 
+      "agx_saturation": float,
+      "diffuse_mode": "none|denoise|deblur|sharpen"
+  },
+  "dramatic": { ... },
+  "pro_research": { ... }
   }
-}
-```
-**CRITICAL:**
-- **Exposure**: -4.0 to +4.0.
-- **Kelvin**: 2000 to 12000.
-"""
-
+  }
+  ```
+  **CRITICAL:**
+  - **Exposure**: -4.0 to +4.0.
+  - **Kelvin**: 2000 to 12000.
+  - **Tint**: 0.5 to 1.5 (0.95-1.05 is subtle, 1.0 is neutral).
+  """
 def get_composition_prompt() -> str:
     return COMPOSITION_PROMPT
 

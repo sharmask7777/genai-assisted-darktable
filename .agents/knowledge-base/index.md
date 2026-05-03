@@ -22,6 +22,9 @@ This index serves as the primary entry point for the `dt-ai` intelligent researc
 | **White Birds** | Highlight texture, AgX brilliance, and Guided Laplacians. | `niche/white-birds.md` |
 | **Bird Cropping**| Specialized wildlife rules: avoiding joint cuts and beak-lead room. | `niche/bird-cropping.md` |
 | **Jungle Wildlife**| General forest/jungle AgX and Diffuse or Sharpen techniques. | `niche/jungle-wildlife.md` |
+| **Telephoto Wildlife**| 500mm+ specific Capture Sharpening and AgX techniques. | `niche/telephoto-wildlife.md` |
+| **Indian Wildlife**| High ISO Safari (3200+) techniques for Indian parks (Nagarhole). | `niche/indian-wildlife.md` |
+| **Indian Pond Heron**| Breeding plumage (maroon/buff) preservation and "flash" wing exposure. | `niche/indian-pond-heron.md` |
 
 ---
 *Last updated: 2026-05-02*
